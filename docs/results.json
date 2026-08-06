@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-06 16:02:51",
+  "generated_at": "2026-08-06 16:18:24",
   "history": [
     {
       "date": "2026-08-06",
-      "generated_at": "2026-08-06 16:02:51",
+      "generated_at": "2026-08-06 16:18:24",
       "params": {
-        "lookback_days": 15,
+        "lookback_days": 10,
         "bias_ma": 15,
         "bias_threshold": 20.0,
         "long_ma": 87,
@@ -13,11 +13,77 @@
         "second_ma": 284,
         "ma_alignment": true,
         "atr_period": 14,
-        "atr_min_threshold": 9.0,
+        "atr_min_pct_threshold": 3.0,
         "require_atr_min": true
       },
-      "count": 0,
-      "results": []
+      "count": 5,
+      "results": [
+        {
+          "ticker": "8039.TW",
+          "name": "台虹",
+          "close": 216.0,
+          "ma87": 153.33,
+          "ma_second": 95.59,
+          "atr14": 16.68,
+          "atr14_pct": 7.72,
+          "bias_pct": 28.55,
+          "bias_date": "2026-07-24",
+          "as_of": "2026-08-06",
+          "market": "TWSE"
+        },
+        {
+          "ticker": "6166.TW",
+          "name": "凌華",
+          "close": 145.0,
+          "ma87": 115.01,
+          "ma_second": 78.13,
+          "atr14": 11.35,
+          "atr14_pct": 7.83,
+          "bias_pct": 23.21,
+          "bias_date": "2026-07-24",
+          "as_of": "2026-08-06",
+          "market": "TWSE"
+        },
+        {
+          "ticker": "2059.TW",
+          "name": "川湖",
+          "close": 10100.0,
+          "ma87": 6025.75,
+          "ma_second": 4051.94,
+          "atr14": 579.83,
+          "atr14_pct": 5.74,
+          "bias_pct": 22.94,
+          "bias_date": "2026-08-06",
+          "as_of": "2026-08-06",
+          "market": "TWSE"
+        },
+        {
+          "ticker": "2923.TW",
+          "name": "鼎固-KY",
+          "close": 28.2,
+          "ma87": 26.22,
+          "ma_second": 22.91,
+          "atr14": 3.34,
+          "atr14_pct": 11.85,
+          "bias_pct": 22.93,
+          "bias_date": "2026-07-29",
+          "as_of": "2026-08-06",
+          "market": "TWSE"
+        },
+        {
+          "ticker": "3605.TW",
+          "name": "宏致",
+          "close": 108.0,
+          "ma87": 79.72,
+          "ma_second": 69.14,
+          "atr14": 6.9,
+          "atr14_pct": 6.39,
+          "bias_pct": 22.66,
+          "bias_date": "2026-08-06",
+          "as_of": "2026-08-06",
+          "market": "TWSE"
+        }
+      ]
     }
   ]
 }
