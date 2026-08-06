@@ -1,7 +1,9 @@
 """
 核心篩選邏輯:
-  條件1:最近 N 個交易日內,曾出現「收盤價相對15MA乖離率 >= BIAS_THRESHOLD%」
+  條件1:最近 LOOKBACK_DAYS 個交易日內,曾出現「收盤價相對15MA乖離率 >= BIAS_THRESHOLD%」
   條件2:最新一根還原日K收盤價 > SMA87
+  條件3(新增):最近 MA87_BREACH_LOOKBACK 個交易日內,不得曾經跌破87MA
+               (只要範圍內有任一天收盤 < 87MA,整檔剔除)
 
 還原日K:使用 yfinance auto_adjust=True,會依除權息回推調整 OHLC。
 """
@@ -11,13 +13,16 @@ import pandas as pd
 import yfinance as yf
 
 # ------- 可調參數 -------
-LOOKBACK_DAYS = 10        # 「10個交易日內」
-BIAS_MA_PERIOD = 15       # 15MA
-BIAS_THRESHOLD = 20.0     # 乖離 20%
-LONG_MA_PERIOD = 87       # SMA87
-BIAS_DIRECTION = "up"   # "up"=只抓正乖離(急漲) / "down"=只抓負乖離(急跌) / "both"=兩者都抓
-HISTORY_PERIOD = "1y"     # 抓多久的歷史資料來算 MA(87MA需要至少87根+緩衝)
-REQUEST_SLEEP = 0.3       # 每檔股票間的延遲,避免被限流
+LOOKBACK_DAYS = 15          # 條件1:近幾個交易日內找乖離觸發
+BIAS_MA_PERIOD = 15         # 15MA
+BIAS_THRESHOLD = 20.0       # 乖離門檻(%)
+LONG_MA_PERIOD = 87         # SMA87
+BIAS_DIRECTION = "up"       # "up"=只抓正乖離(急漲) / "down"=只抓負乖離(急跌) / "both"=兩者都抓
+
+MA87_BREACH_LOOKBACK = 20   # 條件3(新增):近幾個交易日內不得跌破87MA
+
+HISTORY_PERIOD = "1y"       # 抓多久的歷史資料
+REQUEST_SLEEP = 0.3         # 每檔股票間的延遲,避免被限流
 # ------------------------
 
 
@@ -42,6 +47,7 @@ def evaluate(ticker: str, name: str) -> dict | None:
     ma87 = close.rolling(LONG_MA_PERIOD).mean()
     bias = (close - ma15) / ma15 * 100.0
 
+    # --- 條件1:近 N 日內乖離觸及門檻 ---
     recent_bias = bias.tail(LOOKBACK_DAYS)
     if recent_bias.isna().all():
         return None
@@ -61,12 +67,19 @@ def evaluate(ticker: str, name: str) -> dict | None:
     if not hit:
         return None
 
+    trigger_date = recent_bias.idxmax() if trigger_val > 0 else recent_bias.idxmin()
+
+    # --- 條件2:最新收盤 > SMA87 ---
     latest_close = close.iloc[-1]
     latest_ma87 = ma87.iloc[-1]
     if pd.isna(latest_ma87) or latest_close <= latest_ma87:
         return None
 
-    trigger_date = recent_bias.idxmax() if trigger_val > 0 else recent_bias.idxmin()
+    # --- 條件3(新增):近 MA87_BREACH_LOOKBACK 日內不得跌破 SMA87 ---
+    recent_close_87 = close.tail(MA87_BREACH_LOOKBACK)
+    recent_ma87_87 = ma87.tail(MA87_BREACH_LOOKBACK)
+    if (recent_close_87 < recent_ma87_87).any():
+        return None
 
     return {
         "ticker": ticker,
@@ -94,4 +107,4 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
             print(f"[warn] {row['ticker']} 失敗: {e}")
         time.sleep(REQUEST_SLEEP)
     results.sort(key=lambda r: abs(r["bias_pct"]), reverse=True)
-    return results 
+    return results
