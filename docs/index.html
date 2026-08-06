@@ -14,6 +14,7 @@
     --up:#e05656;
     --down:#2fae6b;
     --gold:#d4a72c;
+    --accent:#3b82f6;
     --mono: "SFMono-Regular","Consolas","Liberation Mono",monospace;
     --sans: -apple-system,"Segoe UI",Roboto,"PingFang TC","Microsoft JhengHei",sans-serif;
   }
@@ -46,6 +47,17 @@
     font-family:var(--mono); font-size:11px; color:var(--text);
     background:var(--panel); border:1px solid var(--line);
     padding:4px 8px; border-radius:20px;
+  }
+  .day-tabs{
+    margin-top:12px; display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;
+  }
+  .day-tab{
+    font-family:var(--mono); font-size:12.5px; white-space:nowrap;
+    background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    padding:6px 12px; border-radius:10px; cursor:pointer; flex-shrink:0;
+  }
+  .day-tab.active{
+    background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;
   }
   main{padding:14px;}
   .empty{
@@ -87,6 +99,7 @@
   <h1>乖離率掃描(測試版)</h1>
   <div class="sub" id="asof">最後更新:—</div>
   <div class="params" id="params"></div>
+  <div class="day-tabs" id="day-tabs"></div>
 </header>
 
 <main id="main">
@@ -94,11 +107,67 @@
 </main>
 
 <footer>
-  條件:近 N 交易日內 15MA 乖離觸及門檻,且還原日K收盤 &gt; SMA87,且近期未跌破87MA<br>
+  條件:近 N 交易日內 15MA 乖離觸及門檻,收盤 &gt; SMA87,近期未跌破87MA,SMA87 &gt; 長期均線<br>
+  保留最近5個交易日的掃描結果,點上方日期切換<br>
   資料源:公開行情,僅供研究參考,非投資建議
 </footer>
 
 <script>
+let historyData = [];
+let activeIndex = 0;
+
+function renderDay(idx){
+  activeIndex = idx;
+  const main = document.getElementById('main');
+  const day = historyData[idx];
+  if(!day) return;
+
+  document.getElementById('asof').textContent = '更新時間:' + day.generated_at + '(共 ' + day.count + ' 檔)';
+
+  const p = day.params;
+  document.getElementById('params').innerHTML = `
+    <span class="chip">近${p.lookback_days}交易日</span>
+    <span class="chip">${p.bias_ma}MA 乖離 ≥ ${p.bias_threshold}%</span>
+    <span class="chip">收盤 &gt; SMA${p.long_ma}</span>
+    <span class="chip">近${p.ma87_breach_lookback}日未破87MA</span>
+    ${p.ma_alignment ? `<span class="chip">SMA${p.long_ma} &gt; SMA${p.second_ma}</span>` : ''}
+  `;
+
+  // 更新分頁標籤 active 狀態
+  document.querySelectorAll('.day-tab').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  if(!day.results.length){
+    main.innerHTML = '<div class="empty">這天沒有符合條件的股票。</div>';
+    return;
+  }
+
+  main.innerHTML = day.results.map(r => {
+    const isUp = r.bias_pct > 0;
+    return `
+      <div class="card">
+        <div class="left">
+          <div class="ticker-row">
+            <span class="ticker">${r.ticker.replace('.TW','').replace('.TWO','')}</span>
+            <span class="name">${r.name}</span>
+          </div>
+          <div class="meta">
+            <span>收盤 <b>${r.close}</b></span>
+            <span>SMA87 <b>${r.ma87}</b></span>
+            ${r.ma_second !== null && r.ma_second !== undefined ? `<span>SMA${p.second_ma} <b>${r.ma_second}</b></span>` : ''}
+            <span>${r.market}</span>
+          </div>
+        </div>
+        <div class="right">
+          <div class="bias ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}${r.bias_pct}%</div>
+          <div class="bias-date">${r.bias_date}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 async function load(){
   const main = document.getElementById('main');
   try{
@@ -106,45 +175,22 @@ async function load(){
     const data = await res.json();
 
     document.getElementById('status-text').textContent = '已連線';
-    document.getElementById('asof').textContent = '最後更新:' + data.generated_at + '(共 ' + data.count + ' 檔)';
+    historyData = data.history || [];
 
-    const p = data.params;
-    document.getElementById('params').innerHTML = `
-      <span class="chip">近${p.lookback_days}交易日</span>
-      <span class="chip">${p.bias_ma}MA 乖離 ≥ ${p.bias_threshold}%</span>
-      <span class="chip">收盤 &gt; SMA${p.long_ma}</span>
-      <span class="chip">近${p.ma87_breach_lookback}日未破87MA</span>
-      ${p.ma_alignment ? `<span class="chip">SMA${p.long_ma} &gt; SMA${p.second_ma}</span>` : ''}
-    `;
-
-    if(!data.results.length){
-      main.innerHTML = '<div class="empty">今天沒有符合條件的股票。<br>條件門檻可在 screener.py 調整。</div>';
+    if(!historyData.length){
+      main.innerHTML = '<div class="empty">還沒有掃描結果。<br>請先讓 GitHub Actions 跑過一次。</div>';
       return;
     }
 
-    main.innerHTML = data.results.map(r => {
-      const isUp = r.bias_pct > 0;
-      return `
-        <div class="card">
-          <div class="left">
-            <div class="ticker-row">
-              <span class="ticker">${r.ticker.replace('.TW','').replace('.TWO','')}</span>
-              <span class="name">${r.name}</span>
-            </div>
-            <div class="meta">
-              <span>收盤 <b>${r.close}</b></span>
-              <span>SMA87 <b>${r.ma87}</b></span>
-              ${r.ma287 !== null ? `<span>SMA287 <b>${r.ma287}</b></span>` : ''}
-              <span>${r.market}</span>
-            </div>
-          </div>
-          <div class="right">
-            <div class="bias ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}${r.bias_pct}%</div>
-            <div class="bias-date">${r.bias_date}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    document.getElementById('day-tabs').innerHTML = historyData.map((d, i) =>
+      `<div class="day-tab" data-idx="${i}">${d.date}</div>`
+    ).join('');
+
+    document.querySelectorAll('.day-tab').forEach(el => {
+      el.addEventListener('click', () => renderDay(parseInt(el.dataset.idx)));
+    });
+
+    renderDay(0); // 預設顯示最新一天
 
   }catch(e){
     document.getElementById('status-text').textContent = '尚無資料';
