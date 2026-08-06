@@ -18,6 +18,8 @@ from screener import (
     BIAS_THRESHOLD,
     LONG_MA_PERIOD,
     MA87_BREACH_LOOKBACK,
+    SECOND_MA_PERIOD,
+    REQUIRE_MA_ALIGNMENT,
 )
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "results.json")
@@ -40,6 +42,8 @@ def main():
             "bias_threshold": BIAS_THRESHOLD,
             "long_ma": LONG_MA_PERIOD,
             "ma87_breach_lookback": MA87_BREACH_LOOKBACK,
+            "second_ma": SECOND_MA_PERIOD,
+            "ma_alignment": REQUIRE_MA_ALIGNMENT,
         },
         "count": len(results),
         "results": results,
