@@ -3,9 +3,12 @@
   條件1:最近 LOOKBACK_DAYS 個交易日內,曾出現「收盤價相對15MA乖離率 >= BIAS_THRESHOLD%」
   條件2:最新一根還原日K收盤價 > SMA87
   條件3:最近 MA87_BREACH_LOOKBACK 個交易日內,收盤價不得曾經跌破87MA(只看收盤價,不看盤中)
-  條件4(新增):SMA87 > SMA287(中期均線站上長期均線,多頭排列結構)
+  條件4:SMA87 > SMA{SECOND_MA_PERIOD}(中期均線站上長期均線,多頭排列結構)
 
 還原日K:使用 yfinance auto_adjust=True,會依除權息回推調整 OHLC。
+
+【效能優化】改用 yf.download() 批次下載,一次網路請求抓一整批股票(BATCH_SIZE檔),
+取代原本「一檔一檔迴圈+逐檔延遲」的寫法,大幅減少網路來回次數。
 """
 from __future__ import annotations
 import time
@@ -21,32 +24,26 @@ BIAS_DIRECTION = "up"       # "up"=只抓正乖離(急漲) / "down"=只抓負乖
 
 MA87_BREACH_LOOKBACK = 20   # 條件3:近幾個交易日內不得跌破87MA(用收盤價判斷)
 
-SECOND_MA_PERIOD = 287      # 條件4(新增):第二條均線天數
+SECOND_MA_PERIOD = 287      # 條件4:第二條均線天數
 REQUIRE_MA_ALIGNMENT = True # 是否啟用「SMA87 > SMA{SECOND_MA_PERIOD}」濾網
 
 HISTORY_PERIOD = "2y"       # 抓多久的歷史資料(算287MA需要更長歷史,含緩衝)
-REQUEST_SLEEP = 0.3         # 每檔股票間的延遲,避免被限流
+
+BATCH_SIZE = 150            # 批次下載:每批幾檔股票一起抓
+BATCH_SLEEP = 1.0           # 每批之間的延遲(秒),避免整批請求被限流
 # ------------------------
 
 
-def fetch_history(ticker: str) -> pd.DataFrame | None:
-    try:
-        df = yf.Ticker(ticker).history(period=HISTORY_PERIOD, auto_adjust=True)
-        min_len = max(LONG_MA_PERIOD, SECOND_MA_PERIOD) + 30
-        if df is None or df.empty or len(df) < min_len:
-            return None
-        return df
-    except Exception:
+def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
+    """拿到已經抓好的單一股票歷史資料後,套用篩選邏輯。不做任何網路請求。"""
+    min_len = max(LONG_MA_PERIOD, SECOND_MA_PERIOD) + 30
+    if df is None or df.empty or len(df) < min_len:
         return None
 
-
-def evaluate(ticker: str, name: str) -> dict | None:
-    """回傳符合條件的股票資訊,不符合則回傳 None"""
-    df = fetch_history(ticker)
-    if df is None:
+    close = df["Close"].dropna()
+    if len(close) < min_len:
         return None
 
-    close = df["Close"]
     ma15 = close.rolling(BIAS_MA_PERIOD).mean()
     ma87 = close.rolling(LONG_MA_PERIOD).mean()
     bias = (close - ma15) / ma15 * 100.0
@@ -85,7 +82,7 @@ def evaluate(ticker: str, name: str) -> dict | None:
     if (recent_close_87 < recent_ma87_87).any():
         return None
 
-    # --- 條件4(新增):SMA87 > SMA{SECOND_MA_PERIOD} ---
+    # --- 條件4:SMA87 > SMA{SECOND_MA_PERIOD} ---
     latest_ma287 = None
     if REQUIRE_MA_ALIGNMENT:
         ma287 = close.rolling(SECOND_MA_PERIOD).mean()
@@ -105,19 +102,72 @@ def evaluate(ticker: str, name: str) -> dict | None:
     }
 
 
+def _fetch_batch(tickers: list[str]) -> dict[str, pd.DataFrame]:
+    """一次網路請求下載一批股票的歷史資料,回傳 {ticker: DataFrame}"""
+    out: dict[str, pd.DataFrame] = {}
+    try:
+        data = yf.download(
+            tickers=tickers,
+            period=HISTORY_PERIOD,
+            auto_adjust=True,
+            group_by="ticker",
+            threads=True,
+            progress=False,
+        )
+    except Exception as e:
+        print(f"[warn] 批次下載失敗({len(tickers)}檔): {e}")
+        return out
+
+    if data is None or data.empty:
+        return out
+
+    # 只丟一檔的時候,yfinance 不會回傳 MultiIndex 欄位,要特別處理
+    if len(tickers) == 1:
+        out[tickers[0]] = data
+        return out
+
+    for t in tickers:
+        try:
+            sub = data[t]
+            if sub is not None and not sub.empty:
+                out[t] = sub.dropna(how="all")
+        except (KeyError, Exception):
+            continue
+
+    return out
+
+
 def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
     results = []
     total = len(universe)
-    for i, row in enumerate(universe, 1):
-        if progress and i % 50 == 0:
-            print(f"進度 {i}/{total}")
-        try:
-            hit = evaluate(row["ticker"], row["name"])
-            if hit:
-                hit["market"] = row["market"]
-                results.append(hit)
-        except Exception as e:
-            print(f"[warn] {row['ticker']} 失敗: {e}")
-        time.sleep(REQUEST_SLEEP)
+    ticker_to_name = {row["ticker"]: row for row in universe}
+
+    # 把整份清單切成一批一批
+    all_tickers = [row["ticker"] for row in universe]
+    batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
+
+    done = 0
+    for batch_idx, batch in enumerate(batches, 1):
+        if progress:
+            print(f"批次 {batch_idx}/{len(batches)}(共 {done}/{total} 檔已處理)")
+
+        batch_data = _fetch_batch(batch)
+
+        for t in batch:
+            done += 1
+            row = ticker_to_name.get(t)
+            if row is None:
+                continue
+            df = batch_data.get(t)
+            try:
+                hit = _evaluate_from_df(df, t, row["name"])
+                if hit:
+                    hit["market"] = row["market"]
+                    results.append(hit)
+            except Exception as e:
+                print(f"[warn] {t} 判斷失敗: {e}")
+
+        time.sleep(BATCH_SLEEP)
+
     results.sort(key=lambda r: abs(r["bias_pct"]), reverse=True)
     return results
