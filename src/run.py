@@ -3,8 +3,8 @@
 本機測試: python src/run.py
 GitHub Actions 會每天自動跑這支
 
-【新增】保留最近 MAX_HISTORY_DAYS 個交易日的結果,存成 history 陣列,
-        同一天重複執行會覆蓋掉當天那筆,不會重複累積。
+保留最近 MAX_HISTORY_DAYS 個交易日的結果,存成 history 陣列,
+同一天重複執行會覆蓋掉當天那筆,不會重複累積。
 """
 import json
 import sys
@@ -23,6 +23,9 @@ from screener import (
     MA87_BREACH_LOOKBACK,
     SECOND_MA_PERIOD,
     REQUIRE_MA_ALIGNMENT,
+    ATR_PERIOD,
+    ATR_MIN_THRESHOLD,
+    REQUIRE_ATR_MIN,
 )
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "results.json")
@@ -30,7 +33,6 @@ MAX_HISTORY_DAYS = 5
 
 
 def load_existing_history() -> list[dict]:
-    """讀取現有的 results.json,拿出 history 陣列。檔案不存在或格式不對就回傳空清單。"""
     if not os.path.exists(OUTPUT_PATH):
         return []
     try:
@@ -49,7 +51,7 @@ def main():
     results = scan_universe(universe)
     print(f"符合條件: {len(results)} 檔")
 
-    tz = timezone(timedelta(hours=8))  # 台北時間
+    tz = timezone(timedelta(hours=8))
     now = datetime.now(tz)
     today_str = now.strftime("%Y-%m-%d")
 
@@ -64,16 +66,18 @@ def main():
             "ma87_breach_lookback": MA87_BREACH_LOOKBACK,
             "second_ma": SECOND_MA_PERIOD,
             "ma_alignment": REQUIRE_MA_ALIGNMENT,
+            "atr_period": ATR_PERIOD,
+            "atr_min_threshold": ATR_MIN_THRESHOLD,
+            "require_atr_min": REQUIRE_ATR_MIN,
         },
         "count": len(results),
         "results": results,
     }
 
     history = load_existing_history()
-    # 如果今天已經跑過一次(同一天重跑),先把舊的今天那筆移除,避免重複
     history = [h for h in history if h.get("date") != today_str]
-    history.insert(0, new_entry)          # 新的一天放最前面
-    history = history[:MAX_HISTORY_DAYS]  # 只保留最近5筆
+    history.insert(0, new_entry)
+    history = history[:MAX_HISTORY_DAYS]
 
     payload = {
         "generated_at": new_entry["generated_at"],
