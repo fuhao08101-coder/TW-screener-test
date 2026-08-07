@@ -1,6 +1,38 @@
 {
-  "generated_at": "2026-08-06 16:33:32",
+  "generated_at": "2026-08-07 08:59:47",
   "history": [
+    {
+      "date": "2026-08-07",
+      "generated_at": "2026-08-07 08:59:47",
+      "params": {
+        "lookback_days": 10,
+        "bias_ma": 15,
+        "bias_threshold": 20.0,
+        "long_ma": 87,
+        "ma87_breach_lookback": 15,
+        "second_ma": 284,
+        "ma_alignment": true,
+        "atr_period": 14,
+        "atr_min_pct_threshold": 9.0,
+        "require_atr_min": true
+      },
+      "count": 1,
+      "results": [
+        {
+          "ticker": "2923.TW",
+          "name": "鼎固-KY",
+          "close": 28.2,
+          "ma87": 26.22,
+          "ma_second": 22.91,
+          "atr14": 3.34,
+          "atr14_pct": 11.85,
+          "bias_pct": 22.93,
+          "bias_date": "2026-07-29",
+          "as_of": "2026-08-06",
+          "market": "TWSE"
+        }
+      ]
+    },
     {
       "date": "2026-08-06",
       "generated_at": "2026-08-06 16:33:32",
