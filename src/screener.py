@@ -35,6 +35,10 @@ REQUIRE_ATR_MIN = True      # 是否啟用「ATR14門檻」濾網(絕對值+百�
 HISTORY_PERIOD = "2y"       # 抓多久的歷史資料
 BATCH_SIZE = 150            # 批次下載:每批幾檔股票一起抓
 BATCH_SLEEP = 1.0           # 每批之間的延遲(秒),避免整批請求被限流
+
+# --- 新股票獨立規則(上市天數不夠算SMA87/SMA284的股票,走這條簡化規則) ---
+NEW_LISTING_ENABLE = True   # 是否啟用新股獨立判斷
+NEW_LISTING_MIN_DAYS = 45   # 新股至少要有這麼多個交易日資料,才嘗試簡化判斷(太新的還是抓不到)
 # ------------------------
 
 
@@ -51,15 +55,80 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(alpha=1 / period, adjust=False).mean()
 
 
+def _evaluate_new_listing(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
+    """
+    新股簡化判斷:股票上市天數不夠算 SMA284,但只要湊得到 SMA87 就套用這條簡化規則:
+      條件1:近 LOOKBACK_DAYS 日內乖離觸及門檻
+      條件2:收盤 > SMA87
+    不檢查 SMA284、不檢查ATR14(資料量不足,不強求)。
+    """
+    close = df["Close"].dropna()
+    if len(close) < LONG_MA_PERIOD + 10:  # 至少要能算出穩定的SMA87
+        return None
+
+    ma15 = close.rolling(BIAS_MA_PERIOD).mean()
+    ma87 = close.rolling(LONG_MA_PERIOD).mean()
+    bias = (close - ma15) / ma15 * 100.0
+
+    lookback = min(LOOKBACK_DAYS, len(close))
+    recent_bias = bias.tail(lookback)
+    if recent_bias.isna().all():
+        return None
+
+    if BIAS_DIRECTION == "up":
+        hit = recent_bias.max() >= BIAS_THRESHOLD
+        trigger_val = recent_bias.max()
+    elif BIAS_DIRECTION == "down":
+        hit = recent_bias.min() <= -BIAS_THRESHOLD
+        trigger_val = recent_bias.min()
+    else:
+        hit_up = recent_bias.max() >= BIAS_THRESHOLD
+        hit_down = recent_bias.min() <= -BIAS_THRESHOLD
+        hit = hit_up or hit_down
+        trigger_val = recent_bias.max() if abs(recent_bias.max()) >= abs(recent_bias.min()) else recent_bias.min()
+
+    if not hit:
+        return None
+
+    trigger_date = recent_bias.idxmax() if trigger_val > 0 else recent_bias.idxmin()
+
+    latest_close = close.iloc[-1]
+    latest_ma87 = ma87.iloc[-1]
+    if pd.isna(latest_ma87) or latest_close <= latest_ma87:
+        return None
+
+    return {
+        "ticker": ticker,
+        "name": name,
+        "close": round(float(latest_close), 2),
+        "ma87": round(float(latest_ma87), 2),
+        "ma_second": None,
+        "atr14": None,
+        "atr14_pct": None,
+        "bias_pct": round(float(trigger_val), 2),
+        "bias_date": trigger_date.strftime("%Y-%m-%d"),
+        "as_of": close.index[-1].strftime("%Y-%m-%d"),
+        "new_listing": True,
+        "listed_days": len(close),
+    }
+
+
 def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
     """拿到已經抓好的單一股票歷史資料後,套用篩選邏輯。不做任何網路請求。"""
     min_len = max(LONG_MA_PERIOD, SECOND_MA_PERIOD, ATR_PERIOD) + 30
-    if df is None or df.empty or len(df) < min_len:
+
+    if df is None or df.empty:
         return None
 
-    close = df["Close"].dropna()
-    if len(close) < min_len:
+    close_check = df["Close"].dropna()
+
+    # 資料不夠算完整條件(SMA87/SMA284),但夠算新股簡化規則 → 走新股track
+    if len(close_check) < min_len:
+        if NEW_LISTING_ENABLE:
+            return _evaluate_new_listing(df, ticker, name)
         return None
+
+    close = close_check
 
     ma15 = close.rolling(BIAS_MA_PERIOD).mean()
     ma87 = close.rolling(LONG_MA_PERIOD).mean()
