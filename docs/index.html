@@ -159,6 +159,8 @@ function renderDay(idx){
             ${r.ma87 !== null && r.ma87 !== undefined ? `<span>SMA87 <b>${r.ma87}</b></span>` : ''}
             ${r.ma_second !== null && r.ma_second !== undefined ? `<span>SMA${p.second_ma} <b>${r.ma_second}</b></span>` : ''}
             ${r.atr14 !== null && r.atr14 !== undefined ? `<span>ATR14 <b>${r.atr14}</b>(${r.atr14_pct}%)</span>` : ''}
+            ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>營收MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
+            ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>營收YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
             <span>${r.market}</span>
           </div>
         </div>
