@@ -152,10 +152,11 @@ function renderDay(idx){
           <div class="ticker-row">
             <span class="ticker">${r.ticker.replace('.TW','').replace('.TWO','')}</span>
             <span class="name">${r.name}</span>
+            ${r.new_listing ? `<span class="chip" style="background:#3a2a12;border-color:#7a5a1a;color:#e0a83c;">🆕新股(${r.listed_days}日)</span>` : ''}
           </div>
           <div class="meta">
             <span>收盤 <b>${r.close}</b></span>
-            <span>SMA87 <b>${r.ma87}</b></span>
+            ${r.ma87 !== null && r.ma87 !== undefined ? `<span>SMA87 <b>${r.ma87}</b></span>` : ''}
             ${r.ma_second !== null && r.ma_second !== undefined ? `<span>SMA${p.second_ma} <b>${r.ma_second}</b></span>` : ''}
             ${r.atr14 !== null && r.atr14 !== undefined ? `<span>ATR14 <b>${r.atr14}</b>(${r.atr14_pct}%)</span>` : ''}
             <span>${r.market}</span>
