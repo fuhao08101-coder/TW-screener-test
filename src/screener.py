@@ -28,7 +28,7 @@ SECOND_MA_PERIOD = 284      # 條件4:第二條均線天數
 REQUIRE_MA_ALIGNMENT = True # 是否啟用「SMA87 > SMA{SECOND_MA_PERIOD}」濾網
 
 ATR_PERIOD = 14             # ATR14 計算天數
-ATR_MIN_PCT_THRESHOLD = 1.5 # 條件5:ATR14 佔股價百分比要 >= 這個數字(%),低於就剔除
+ATR_MIN_PCT_THRESHOLD = 9.0 # 條件5:ATR14 佔股價百分比要 >= 這個數字(%),低於就剔除
 REQUIRE_ATR_MIN = True      # 是否啟用「ATR14門檻」濾網
 
 HISTORY_PERIOD = "2y"       # 抓多久的歷史資料
