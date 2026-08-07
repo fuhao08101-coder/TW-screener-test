@@ -131,7 +131,7 @@ function renderDay(idx){
     <span class="chip">收盤 &gt; SMA${p.long_ma}</span>
     <span class="chip">近${p.ma87_breach_lookback}日未破87MA</span>
     ${p.ma_alignment ? `<span class="chip">SMA${p.long_ma} &gt; SMA${p.second_ma}</span>` : ''}
-    ${p.require_atr_min ? `<span class="chip">ATR${p.atr_period}佔股價 ≥ ${p.atr_min_pct_threshold}%</span>` : ''}
+    ${p.require_atr_min ? `<span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold} 且 ≥ ${p.atr_min_pct_threshold}%</span>` : ''}
   `;
 
   // 更新分頁標籤 active 狀態
