@@ -17,6 +17,48 @@ from screener import (
 )
 
 
+def diagnose_new_listing(df: pd.DataFrame):
+    """對應 screener.py 的 _evaluate_new_listing,逐條印出判斷結果"""
+    close = df["Close"].dropna()
+    ma15 = close.rolling(BIAS_MA_PERIOD).mean()
+    ma87 = close.rolling(LONG_MA_PERIOD).mean()
+    bias = (close - ma15) / ma15 * 100.0
+
+    lookback = min(LOOKBACK_DAYS, len(close))
+    recent_bias = bias.tail(lookback)
+
+    max_bias = recent_bias.max()
+    min_bias = recent_bias.min()
+
+    print(f"  【條件1】近{lookback}日乖離(方向={BIAS_DIRECTION}, 門檻={BIAS_THRESHOLD}%)")
+    print(f"     近{lookback}日最大乖離: {max_bias:.2f}%  最小乖離: {min_bias:.2f}%")
+    cond1 = (max_bias >= BIAS_THRESHOLD) if BIAS_DIRECTION == "up" else \
+            (min_bias <= -BIAS_THRESHOLD) if BIAS_DIRECTION == "down" else \
+            (max_bias >= BIAS_THRESHOLD or min_bias <= -BIAS_THRESHOLD)
+    print(f"     {'✅ 通過' if cond1 else '❌ 沒通過'}")
+
+    latest_close = close.iloc[-1]
+    latest_ma87 = ma87.iloc[-1]
+    print(f"\n  【條件2】收盤({latest_close:.2f}) > SMA87({latest_ma87:.2f})")
+    cond2 = latest_close > latest_ma87
+    print(f"     {'✅ 通過' if cond2 else '❌ 沒通過'}")
+
+    breach_lookback = min(MA87_BREACH_LOOKBACK, len(close))
+    recent_close_87 = close.tail(breach_lookback)
+    recent_ma87_87 = ma87.tail(breach_lookback)
+    breach_days = (recent_close_87 < recent_ma87_87).sum()
+    print(f"\n  【條件3】近{breach_lookback}日內跌破87MA的天數: {breach_days} 天")
+    cond3 = breach_days == 0
+    print(f"     {'✅ 通過(0天跌破)' if cond3 else f'❌ 沒通過(有{breach_days}天跌破)'}")
+
+    if breach_days > 0:
+        breach_dates = recent_close_87[recent_close_87 < recent_ma87_87].index
+        print(f"     跌破的日期: {[d.strftime('%Y-%m-%d') for d in breach_dates]}")
+
+    overall = cond1 and cond2 and cond3
+    print(f"\n  ===> 綜合結果(新股規則): {'✅ 應該要被抓到' if overall else '❌ 被剔除,上面第一個❌就是原因'}")
+
+
 def diagnose(code: str):
     for suffix, market in [(".TW", "TWSE"), (".TWO", "TPEX")]:
         ticker = f"{code}{suffix}"
@@ -37,7 +79,8 @@ def diagnose(code: str):
         if len(df) < min_len:
             print(f"  資料筆數不足完整規則(需要至少 {min_len} 筆,只有 {len(df)} 筆)")
             if len(df) >= LONG_MA_PERIOD + 10:
-                print(f"  → 但夠算SMA87,會改走「新股簡化規則」(只看乖離+SMA87,不看SMA284/ATR14)")
+                print(f"  → 夠算SMA87,走「新股簡化規則」,繼續檢查各條件:\n")
+                diagnose_new_listing(df)
             else:
                 print(f"  → 連SMA87都算不出來(需要至少{LONG_MA_PERIOD+10}筆),完全被排除")
             continue
