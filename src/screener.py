@@ -60,6 +60,7 @@ def _evaluate_new_listing(df: pd.DataFrame, ticker: str, name: str) -> dict | No
     新股簡化判斷:股票上市天數不夠算 SMA284,但只要湊得到 SMA87 就套用這條簡化規則:
       條件1:近 LOOKBACK_DAYS 日內乖離觸及門檻
       條件2:收盤 > SMA87
+      條件3:近 MA87_BREACH_LOOKBACK 日內不得跌破 SMA87(跟老股票一樣)
     不檢查 SMA284、不檢查ATR14(資料量不足,不強求)。
     """
     close = df["Close"].dropna()
@@ -95,6 +96,13 @@ def _evaluate_new_listing(df: pd.DataFrame, ticker: str, name: str) -> dict | No
     latest_close = close.iloc[-1]
     latest_ma87 = ma87.iloc[-1]
     if pd.isna(latest_ma87) or latest_close <= latest_ma87:
+        return None
+
+    # --- 條件3:近 MA87_BREACH_LOOKBACK 日內不得跌破 SMA87(跟老股票同一套規則) ---
+    breach_lookback = min(MA87_BREACH_LOOKBACK, len(close))
+    recent_close_87 = close.tail(breach_lookback)
+    recent_ma87_87 = ma87.tail(breach_lookback)
+    if (recent_close_87 < recent_ma87_87).any():
         return None
 
     return {
