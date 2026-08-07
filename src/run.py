@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.dirname(__file__))
 
 from universe import get_universe
+from revenue import get_monthly_revenue
 from screener import (
     scan_universe,
     LOOKBACK_DAYS,
@@ -51,6 +52,22 @@ def main():
 
     results = scan_universe(universe)
     print(f"符合條件: {len(results)} 檔")
+
+    print("抓取月營收資料...")
+    revenue_map = get_monthly_revenue()
+    print(f"取得 {len(revenue_map)} 家公司月營收資料(僅上市TWSE)")
+
+    for r in results:
+        code = r["ticker"].replace(".TW", "").replace(".TWO", "")
+        rev = revenue_map.get(code)
+        if rev:
+            r["revenue_month"] = rev["month"]
+            r["revenue_mom_pct"] = rev["mom_pct"]
+            r["revenue_yoy_pct"] = rev["yoy_pct"]
+        else:
+            r["revenue_month"] = None
+            r["revenue_mom_pct"] = None
+            r["revenue_yoy_pct"] = None
 
     tz = timezone(timedelta(hours=8))
     now = datetime.now(tz)
