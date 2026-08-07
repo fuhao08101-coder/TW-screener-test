@@ -9,11 +9,12 @@ import sys
 import pandas as pd
 import yfinance as yf
 
+from universe import get_universe
 from screener import (
-    LOOKBACK_DAYS, BIAS_MA_PERIOD, BIAS_THRESHOLD, LONG_MA_PERIOD, BIAS_DIRECTION,
-    MA87_BREACH_LOOKBACK, SECOND_MA_PERIOD, REQUIRE_MA_ALIGNMENT,
     ATR_PERIOD, ATR_MIN_THRESHOLD, ATR_MIN_PCT_THRESHOLD, REQUIRE_ATR_MIN,
-    HISTORY_PERIOD, _calc_atr,
+    LOOKBACK_DAYS, BIAS_MA_PERIOD, BIAS_THRESHOLD, LONG_MA_PERIOD, BIAS_DIRECTION,
+    MA87_BREACH_LOOKBACK, SECOND_MA_PERIOD, REQUIRE_MA_ALIGNMENT, HISTORY_PERIOD,
+    _calc_atr, _fetch_batch,
 )
 
 
@@ -140,4 +141,31 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("用法: python src/debug_ticker.py 股票代號(例如 6414)")
         sys.exit(1)
-    diagnose(sys.argv[1])
+
+    code = sys.argv[1]
+    diagnose(code)
+
+    print(f"\n\n===== 檢查掃描流程是否會漏掉這檔 =====")
+    print("步驟A:檢查證交所/櫃買清單裡有沒有這個代號...")
+    universe = get_universe(include_otc=True)
+    matched = [row for row in universe if row["code"] == code]
+    if not matched:
+        print(f"  ❌ 清單裡完全沒有代號 {code},問題出在 universe.py 抓取的清單漏了它")
+        print(f"     (可能原因:交易所公開資料剛好沒收錄、或代號格式不符)")
+    else:
+        for row in matched:
+            ticker = row["ticker"]
+            print(f"  ✅ 清單裡有:{row['name']}({ticker}), 市場={row['market']}")
+
+            print(f"\n步驟B:模擬正式掃描的「批次下載」方式,單獨測試這一檔會不會抓到資料...")
+            batch_result = _fetch_batch([ticker])
+            if ticker in batch_result and not batch_result[ticker].empty:
+                print(f"  ✅ 批次下載方式(_fetch_batch)成功抓到 {len(batch_result[ticker])} 筆資料")
+                print(f"     → 代表批次下載本身沒問題,如果實際掃描還是漏掉,")
+                print(f"       可能是「跟其他上百檔一起大批次抓取時」才會不穩定,")
+                print(f"       單獨測試看不出來,建議之後把 BATCH_SIZE 調小一點試試")
+            else:
+                print(f"  ❌ 批次下載方式(_fetch_batch)抓不到這檔的資料!")
+                print(f"     → 這就是問題所在:yf.download 批次模式對這檔股票不穩定")
+                print(f"       單獨用 yf.Ticker() 查詢(debug工具用的方式)沒問題,")
+                print(f"       但正式掃描用的批次方式會漏掉它")
