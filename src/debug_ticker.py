@@ -35,7 +35,11 @@ def diagnose(code: str):
 
         min_len = max(LONG_MA_PERIOD, SECOND_MA_PERIOD, ATR_PERIOD) + 30
         if len(df) < min_len:
-            print(f"  ❌ 資料筆數不足(需要至少 {min_len} 筆,只有 {len(df)} 筆)→ 會被排除")
+            print(f"  資料筆數不足完整規則(需要至少 {min_len} 筆,只有 {len(df)} 筆)")
+            if len(df) >= LONG_MA_PERIOD + 10:
+                print(f"  → 但夠算SMA87,會改走「新股簡化規則」(只看乖離+SMA87,不看SMA284/ATR14)")
+            else:
+                print(f"  → 連SMA87都算不出來(需要至少{LONG_MA_PERIOD+10}筆),完全被排除")
             continue
 
         close = df["Close"].dropna()
