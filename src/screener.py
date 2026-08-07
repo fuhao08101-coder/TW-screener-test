@@ -4,7 +4,7 @@
   條件2:最新一根還原日K收盤價 > SMA87
   條件3:最近 MA87_BREACH_LOOKBACK 個交易日內,收盤價不得曾經跌破87MA(只看收盤價,不看盤中)
   條件4:SMA87 > SMA{SECOND_MA_PERIOD}(中期均線站上長期均線,多頭排列結構)
-  條件5:ATR14佔股價百分比 >= ATR_MIN_PCT_THRESHOLD(衡量波動佔股價比例,不同價位股票可公平比較)
+  條件5:ATR14「絕對值」>= ATR_MIN_THRESHOLD(14日平均真實區間,衡量波動大小)
 
 還原日K:使用 yfinance auto_adjust=True,會依除權息回推調整 OHLC。
 
@@ -16,7 +16,7 @@ import pandas as pd
 import yfinance as yf
 
 # ------- 可調參數 -------
-LOOKBACK_DAYS = 10          # 條件1:近幾個交易日內找乖離觸發
+LOOKBACK_DAYS = 30          # 條件1:近幾個交易日內找乖離觸發
 BIAS_MA_PERIOD = 15         # 15MA
 BIAS_THRESHOLD = 20.0       # 乖離門檻(%)
 LONG_MA_PERIOD = 87         # SMA87
@@ -28,8 +28,9 @@ SECOND_MA_PERIOD = 284      # 條件4:第二條均線天數
 REQUIRE_MA_ALIGNMENT = True # 是否啟用「SMA87 > SMA{SECOND_MA_PERIOD}」濾網
 
 ATR_PERIOD = 14             # ATR14 計算天數
-ATR_MIN_PCT_THRESHOLD = 9.0 # 條件5:ATR14 佔股價百分比要 >= 這個數字(%),低於就剔除
-REQUIRE_ATR_MIN = True      # 是否啟用「ATR14門檻」濾網
+ATR_MIN_THRESHOLD = 9.0     # 條件5a:ATR14「絕對值」要 >= 這個數字,低於就剔除
+ATR_MIN_PCT_THRESHOLD = 1.5 # 條件5b:ATR14「佔股價百分比」要 >= 這個數字(%),低於就剔除
+REQUIRE_ATR_MIN = True      # 是否啟用「ATR14門檻」濾網(絕對值+百分比,兩個都要通過)
 
 HISTORY_PERIOD = "2y"       # 抓多久的歷史資料
 BATCH_SIZE = 150            # 批次下載:每批幾檔股票一起抓
@@ -106,13 +107,15 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         if pd.isna(latest_ma_second) or latest_ma87 <= latest_ma_second:
             return None
 
-    # --- ATR14(百分比制:ATR14 佔股價的百分比) ---
+    # --- ATR14(同時算絕對值與佔股價百分比) ---
     atr = _calc_atr(df, ATR_PERIOD)
     latest_atr = atr.iloc[-1]
     latest_atr_pct = (latest_atr / latest_close * 100.0) if not pd.isna(latest_atr) and latest_close else None
 
-    # --- 條件5:ATR14佔股價百分比 低於門檻就剔除 ---
+    # --- 條件5:ATR14絕對值 與 佔股價百分比,兩個門檻都要通過才留下 ---
     if REQUIRE_ATR_MIN:
+        if pd.isna(latest_atr) or latest_atr < ATR_MIN_THRESHOLD:
+            return None
         if latest_atr_pct is None or latest_atr_pct < ATR_MIN_PCT_THRESHOLD:
             return None
 
