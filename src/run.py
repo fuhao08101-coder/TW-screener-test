@@ -24,6 +24,7 @@ from screener import (
     SECOND_MA_PERIOD,
     REQUIRE_MA_ALIGNMENT,
     ATR_PERIOD,
+    ATR_MIN_THRESHOLD,
     ATR_MIN_PCT_THRESHOLD,
     REQUIRE_ATR_MIN,
 )
@@ -67,6 +68,7 @@ def main():
             "second_ma": SECOND_MA_PERIOD,
             "ma_alignment": REQUIRE_MA_ALIGNMENT,
             "atr_period": ATR_PERIOD,
+            "atr_min_threshold": ATR_MIN_THRESHOLD,
             "atr_min_pct_threshold": ATR_MIN_PCT_THRESHOLD,
             "require_atr_min": REQUIRE_ATR_MIN,
         },
