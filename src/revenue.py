@@ -49,6 +49,19 @@ def get_monthly_revenue() -> dict:
 
 
 if __name__ == "__main__":
+    import requests as _requests
+    print("===== 原始API回應檢查 =====")
+    try:
+        raw = _requests.get(REVENUE_URL, headers=HEADERS, timeout=30).json()
+        print(f"回傳筆數: {len(raw)}")
+        if raw:
+            print(f"\n第一筆資料的所有欄位名稱與值:")
+            for k, v in raw[0].items():
+                print(f"  {k!r}: {v!r}")
+    except Exception as e:
+        print(f"❌ API請求失敗: {e}")
+
+    print("\n\n===== 用目前程式邏輯解析後的結果 =====")
     rev = get_monthly_revenue()
     print(f"共取得 {len(rev)} 家公司月營收資料")
     for code in list(rev)[:5]:
