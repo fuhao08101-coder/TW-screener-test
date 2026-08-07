@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-07 15:54:46",
+  "generated_at": "2026-08-07 16:16:30",
   "history": [
     {
       "date": "2026-08-07",
-      "generated_at": "2026-08-07 15:54:46",
+      "generated_at": "2026-08-07 16:16:30",
       "params": {
         "lookback_days": 30,
         "bias_ma": 15,
@@ -17,7 +17,7 @@
         "atr_min_pct_threshold": 1.5,
         "require_atr_min": true
       },
-      "count": 12,
+      "count": 8,
       "results": [
         {
           "ticker": "8039.TW",
@@ -30,7 +30,10 @@
           "bias_pct": 41.62,
           "bias_date": "2026-07-23",
           "as_of": "2026-08-07",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "1303.TW",
@@ -43,22 +46,10 @@
           "bias_pct": 36.5,
           "bias_date": "2026-07-02",
           "as_of": "2026-08-07",
-          "market": "TWSE"
-        },
-        {
-          "ticker": "6907.TWO",
-          "name": "雅特力-KY",
-          "close": 189.0,
-          "ma87": 147.96,
-          "ma_second": null,
-          "atr14": null,
-          "atr14_pct": null,
-          "bias_pct": 35.31,
-          "bias_date": "2026-07-15",
-          "as_of": "2026-08-07",
-          "new_listing": true,
-          "listed_days": 124,
-          "market": "TPEX"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "2059.TW",
@@ -71,7 +62,10 @@
           "bias_pct": 31.79,
           "bias_date": "2026-08-07",
           "as_of": "2026-08-07",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "2645.TW",
@@ -84,22 +78,10 @@
           "bias_pct": 29.68,
           "bias_date": "2026-07-06",
           "as_of": "2026-08-07",
-          "market": "TWSE"
-        },
-        {
-          "ticker": "3717.TW",
-          "name": "聯嘉投控",
-          "close": 24.05,
-          "ma87": 22.71,
-          "ma_second": null,
-          "atr14": null,
-          "atr14_pct": null,
-          "bias_pct": 25.96,
-          "bias_date": "2026-07-01",
-          "as_of": "2026-08-07",
-          "new_listing": true,
-          "listed_days": 238,
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6446.TW",
@@ -112,7 +94,10 @@
           "bias_pct": 24.21,
           "bias_date": "2026-06-30",
           "as_of": "2026-08-07",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6166.TW",
@@ -125,7 +110,10 @@
           "bias_pct": 23.21,
           "bias_date": "2026-07-24",
           "as_of": "2026-08-07",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6414.TW",
@@ -138,35 +126,10 @@
           "bias_pct": 22.67,
           "bias_date": "2026-07-23",
           "as_of": "2026-08-07",
-          "market": "TWSE"
-        },
-        {
-          "ticker": "6538.TWO",
-          "name": "倉和",
-          "close": 145.0,
-          "ma87": 109.82,
-          "ma_second": 85.91,
-          "atr14": 12.09,
-          "atr14_pct": 8.34,
-          "bias_pct": 22.29,
-          "bias_date": "2026-07-01",
-          "as_of": "2026-08-07",
-          "market": "TPEX"
-        },
-        {
-          "ticker": "7711.TW",
-          "name": "永擎",
-          "close": 375.0,
-          "ma87": 342.21,
-          "ma_second": null,
-          "atr14": null,
-          "atr14_pct": null,
-          "bias_pct": 22.0,
-          "bias_date": "2026-08-07",
-          "as_of": "2026-08-07",
-          "new_listing": true,
-          "listed_days": 173,
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6957.TW",
@@ -179,7 +142,10 @@
           "bias_pct": 20.22,
           "bias_date": "2026-07-16",
           "as_of": "2026-08-07",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         }
       ]
     },
