@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-07 16:16:30",
+  "generated_at": "2026-08-07 17:47:18",
   "history": [
     {
       "date": "2026-08-07",
-      "generated_at": "2026-08-07 16:16:30",
+      "generated_at": "2026-08-07 17:47:18",
       "params": {
         "lookback_days": 30,
         "bias_ma": 15,
@@ -17,7 +17,7 @@
         "atr_min_pct_threshold": 1.5,
         "require_atr_min": true
       },
-      "count": 8,
+      "count": 10,
       "results": [
         {
           "ticker": "8039.TW",
@@ -48,6 +48,24 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
+        },
+        {
+          "ticker": "6907.TWO",
+          "name": "雅特力-KY",
+          "close": 189.0,
+          "ma87": 147.96,
+          "ma_second": null,
+          "atr14": null,
+          "atr14_pct": null,
+          "bias_pct": 35.31,
+          "bias_date": "2026-07-15",
+          "as_of": "2026-08-07",
+          "new_listing": true,
+          "listed_days": 124,
+          "market": "TPEX",
+          "revenue_month": null,
           "revenue_mom_pct": null,
           "revenue_yoy_pct": null
         },
@@ -128,6 +146,22 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
+        },
+        {
+          "ticker": "6538.TWO",
+          "name": "倉和",
+          "close": 145.0,
+          "ma87": 109.82,
+          "ma_second": 85.91,
+          "atr14": 12.09,
+          "atr14_pct": 8.34,
+          "bias_pct": 22.29,
+          "bias_date": "2026-07-01",
+          "as_of": "2026-08-07",
+          "market": "TPEX",
+          "revenue_month": null,
           "revenue_mom_pct": null,
           "revenue_yoy_pct": null
         },
