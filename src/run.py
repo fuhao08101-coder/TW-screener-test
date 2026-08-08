@@ -58,7 +58,7 @@ def main():
     print(f"取得 {len(revenue_map)} 家公司月營收資料(僅上市TWSE)")
 
     for r in results:
-        code = r["ticker"].replace(".TW", "").replace(".TWO", "")
+        code = r["ticker"].replace(".TWO", "").replace(".TW", "")
         rev = revenue_map.get(code)
         if rev:
             r["revenue_month"] = rev["month"]
