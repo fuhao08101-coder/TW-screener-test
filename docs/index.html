@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>乖離掃描 · TW Screener (測試版)</title>
+<title>大撈家 2.0</title>
 <style>
   :root{
     --bg:#0b0e11;
@@ -96,7 +96,7 @@
 
 <header>
   <div class="eyebrow"><span class="dot"></span><span id="status-text">連線中</span></div>
-  <h1>乖離率掃描(測試版)</h1>
+  <h1>大撈家 2.0</h1>
   <div class="sub" id="asof">最後更新:—</div>
   <div class="params" id="params"></div>
   <div class="day-tabs" id="day-tabs"></div>
@@ -150,7 +150,7 @@ function renderDay(idx){
       <div class="card">
         <div class="left">
           <div class="ticker-row">
-            <span class="ticker">${r.ticker.replace('.TW','').replace('.TWO','')}</span>
+            <span class="ticker">${r.ticker.replace('.TWO','').replace('.TW','')}</span>
             <span class="name">${r.name}</span>
             ${r.new_listing ? `<span class="chip" style="background:#3a2a12;border-color:#7a5a1a;color:#e0a83c;">🆕新股(${r.listed_days}日)</span>` : ''}
           </div>
