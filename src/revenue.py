@@ -61,24 +61,39 @@ def get_monthly_revenue() -> dict:
 
 
 if __name__ == "__main__":
-    print("===== 原始API回應檢查 =====")
+    print("===== 上市(TWSE)原始API回應檢查 =====")
     try:
         resp = requests.get(REVENUE_URL, headers=HEADERS, timeout=30)
         print(f"HTTP狀態碼: {resp.status_code}")
         print(f"Content-Type: {resp.headers.get('Content-Type')}")
-        print(f"回應內容前500字:\n{resp.text[:500]}")
         if resp.status_code == 200:
             raw = resp.json()
-            print(f"\n回傳筆數: {len(raw)}")
+            print(f"回傳筆數: {len(raw)}")
             if raw:
-                print(f"\n第一筆資料的所有欄位名稱與值:")
-                for k, v in raw[0].items():
-                    print(f"  {k!r}: {v!r}")
+                print(f"第一筆資料欄位: {list(raw[0].keys())}")
     except Exception as e:
         print(f"❌ 請求過程發生例外: {e}")
 
-    print("\n\n===== 用目前程式邏輯解析後的結果 =====")
+    print("\n\n===== 用目前程式邏輯解析後的結果(上市) =====")
     rev = get_monthly_revenue()
     print(f"共取得 {len(rev)} 家公司月營收資料")
     for code in list(rev)[:5]:
         print(code, rev[code])
+
+    print("\n\n===== 上櫃(TPEx)候選端點探測 =====")
+    OTC_CANDIDATE_URL = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap05_O"
+    try:
+        resp2 = requests.get(OTC_CANDIDATE_URL, headers=HEADERS, timeout=30)
+        print(f"URL: {OTC_CANDIDATE_URL}")
+        print(f"HTTP狀態碼: {resp2.status_code}")
+        print(f"Content-Type: {resp2.headers.get('Content-Type')}")
+        print(f"回應內容前500字:\n{resp2.text[:500]}")
+        if resp2.status_code == 200:
+            raw2 = resp2.json()
+            print(f"\n回傳筆數: {len(raw2)}")
+            if raw2:
+                print(f"\n第一筆資料的所有欄位名稱與值:")
+                for k, v in raw2[0].items():
+                    print(f"  {k!r}: {v!r}")
+    except Exception as e:
+        print(f"❌ 上櫃候選端點請求失敗: {e}")
