@@ -130,8 +130,6 @@ function renderDay(idx){
     <span class="chip">${p.bias_ma}MA 乖離 ≥ ${p.bias_threshold}%</span>
     <span class="chip">收盤 &gt; SMA${p.long_ma}</span>
     <span class="chip">近${p.ma87_breach_lookback}日未破87MA</span>
-    ${p.ma_alignment ? `<span class="chip">SMA${p.long_ma} &gt; SMA${p.second_ma}</span>` : ''}
-    ${p.require_atr_min ? `<span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold} 且 ≥ ${p.atr_min_pct_threshold}%</span>` : ''}
   `;
 
   // 更新分頁標籤 active 狀態
@@ -153,12 +151,11 @@ function renderDay(idx){
             <span class="ticker">${r.ticker.replace('.TWO','').replace('.TW','')}</span>
             <span class="name">${r.name}</span>
             ${r.new_listing ? `<span class="chip" style="background:#3a2a12;border-color:#7a5a1a;color:#e0a83c;">🆕新股(${r.listed_days}日)</span>` : ''}
+            ${r.conference_days_left !== null && r.conference_days_left !== undefined ? `<span class="chip" style="background:#12283a;border-color:#1a5a7a;color:#3ca8e0;">📢法說會${r.conference_days_left === 0 ? '今天' : r.conference_days_left + '天後'}</span>` : ''}
+            ${r.same_group_industry ? `<span class="chip" style="background:#1c3a12;border-color:#4a7a1a;color:#8ce03c;">相同族群 [${r.same_group_industry}]</span>` : ''}
           </div>
           <div class="meta">
             <span>收盤 <b>${r.close}</b></span>
-            ${r.ma87 !== null && r.ma87 !== undefined ? `<span>SMA87 <b>${r.ma87}</b></span>` : ''}
-            ${r.ma_second !== null && r.ma_second !== undefined ? `<span>SMA${p.second_ma} <b>${r.ma_second}</b></span>` : ''}
-            ${r.atr14 !== null && r.atr14 !== undefined ? `<span>ATR14 <b>${r.atr14}</b>(${r.atr14_pct}%)</span>` : ''}
             ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>營收MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
             ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>營收YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
             <span>${r.market}</span>
