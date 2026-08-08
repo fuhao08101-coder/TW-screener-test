@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-08 08:11:26",
+  "generated_at": "2026-08-08 08:28:21",
   "history": [
     {
       "date": "2026-08-08",
-      "generated_at": "2026-08-08 08:11:26",
+      "generated_at": "2026-08-08 08:28:21",
       "params": {
         "lookback_days": 30,
         "bias_ma": 15,
@@ -17,7 +17,7 @@
         "atr_min_pct_threshold": 1.5,
         "require_atr_min": true
       },
-      "count": 9,
+      "count": 11,
       "results": [
         {
           "ticker": "7689.TW",
@@ -50,8 +50,8 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": -8.664322701647519,
-          "revenue_yoy_pct": -6.568877622365888
+          "revenue_mom_pct": -8.66,
+          "revenue_yoy_pct": -6.57
         },
         {
           "ticker": "1303.TW",
@@ -66,8 +66,26 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": -5.883913354043924,
-          "revenue_yoy_pct": 31.786106694295782
+          "revenue_mom_pct": -5.88,
+          "revenue_yoy_pct": 31.79
+        },
+        {
+          "ticker": "6907.TWO",
+          "name": "雅特力-KY",
+          "close": 189.0,
+          "ma87": 147.96,
+          "ma_second": null,
+          "atr14": null,
+          "atr14_pct": null,
+          "bias_pct": 35.31,
+          "bias_date": "2026-07-15",
+          "as_of": "2026-08-07",
+          "new_listing": true,
+          "listed_days": 124,
+          "market": "TPEX",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "2059.TW",
@@ -82,8 +100,8 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": 17.178210235372905,
-          "revenue_yoy_pct": 220.52305812021433
+          "revenue_mom_pct": 17.18,
+          "revenue_yoy_pct": 220.52
         },
         {
           "ticker": "2645.TW",
@@ -98,8 +116,8 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": 8.077901368688048,
-          "revenue_yoy_pct": 13.009121590861934
+          "revenue_mom_pct": 8.08,
+          "revenue_yoy_pct": 13.01
         },
         {
           "ticker": "6446.TW",
@@ -114,8 +132,8 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": -5.110941808480217,
-          "revenue_yoy_pct": 94.88062647812397
+          "revenue_mom_pct": -5.11,
+          "revenue_yoy_pct": 94.88
         },
         {
           "ticker": "6166.TW",
@@ -130,8 +148,8 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": 4.709859937171321,
-          "revenue_yoy_pct": 25.89023613595408
+          "revenue_mom_pct": 4.71,
+          "revenue_yoy_pct": 25.89
         },
         {
           "ticker": "6414.TW",
@@ -146,8 +164,24 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": 13.36395526100422,
-          "revenue_yoy_pct": 56.96595858063789
+          "revenue_mom_pct": 13.36,
+          "revenue_yoy_pct": 56.97
+        },
+        {
+          "ticker": "6538.TWO",
+          "name": "倉和",
+          "close": 145.0,
+          "ma87": 109.82,
+          "ma_second": 85.91,
+          "atr14": 12.09,
+          "atr14_pct": 8.34,
+          "bias_pct": 22.29,
+          "bias_date": "2026-07-01",
+          "as_of": "2026-08-07",
+          "market": "TPEX",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6957.TW",
@@ -162,8 +196,8 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
-          "revenue_mom_pct": 35.16988915329257,
-          "revenue_yoy_pct": 33.531077468242295
+          "revenue_mom_pct": 35.17,
+          "revenue_yoy_pct": 33.53
         }
       ]
     },
