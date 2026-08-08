@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from universe import get_universe
 from revenue import get_monthly_revenue
+from conference import update_conference_log, get_days_until_conference
 from screener import (
     scan_universe,
     LOOKBACK_DAYS,
@@ -31,6 +32,7 @@ from screener import (
 )
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "results.json")
+CONFERENCE_LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "conference_log.json")
 MAX_HISTORY_DAYS = 5
 
 
@@ -41,6 +43,16 @@ def load_existing_history() -> list[dict]:
         with open(OUTPUT_PATH, "r", encoding="utf-8") as f:
             old = json.load(f)
         return old.get("history", [])
+    except Exception:
+        return []
+
+
+def load_conference_log() -> list[dict]:
+    if not os.path.exists(CONFERENCE_LOG_PATH):
+        return []
+    try:
+        with open(CONFERENCE_LOG_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
     except Exception:
         return []
 
@@ -62,12 +74,36 @@ def main():
         rev = revenue_map.get(code)
         if rev:
             r["revenue_month"] = rev["month"]
+            r["industry"] = rev.get("industry")
             r["revenue_mom_pct"] = round(rev["mom_pct"], 2) if rev["mom_pct"] is not None else None
             r["revenue_yoy_pct"] = round(rev["yoy_pct"], 2) if rev["yoy_pct"] is not None else None
         else:
             r["revenue_month"] = None
+            r["industry"] = None
             r["revenue_mom_pct"] = None
             r["revenue_yoy_pct"] = None
+
+    # 同族群標籤:今天篩出來的結果裡,只要同一個「產業別」出現2次以上,就標記出來
+    industry_counts = {}
+    for r in results:
+        ind = r.get("industry")
+        if ind:
+            industry_counts[ind] = industry_counts.get(ind, 0) + 1
+    for r in results:
+        ind = r.get("industry")
+        r["same_group_industry"] = ind if (ind and industry_counts.get(ind, 0) >= 2) else None
+
+    print("更新法說會清單...")
+    conference_log = load_conference_log()
+    conference_log = update_conference_log(conference_log)
+    with open(CONFERENCE_LOG_PATH, "w", encoding="utf-8") as f:
+        json.dump(conference_log, f, ensure_ascii=False, indent=2)
+    print(f"目前累積(尚未開完的)法說會: {len(conference_log)} 筆")
+
+    for r in results:
+        code = r["ticker"].replace(".TWO", "").replace(".TW", "")
+        days_left = get_days_until_conference(code, conference_log)
+        r["conference_days_left"] = days_left if (days_left is not None and days_left <= 5) else None
 
     tz = timezone(timedelta(hours=8))
     now = datetime.now(tz)
