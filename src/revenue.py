@@ -17,6 +17,7 @@ HEADERS = {
 
 FIELD_CODE = "公司代號"
 FIELD_MONTH = "資料年月"
+FIELD_INDUSTRY = "產業別"
 FIELD_MOM = "營業收入-上月比較增減(%)"
 FIELD_YOY = "營業收入-去年同月增減(%)"
 
@@ -58,6 +59,7 @@ def _fetch_one(url: str) -> dict:
                     continue
                 out[code] = {
                     "month": row.get(FIELD_MONTH),
+                    "industry": row.get(FIELD_INDUSTRY),
                     "mom_pct": _to_float(row.get(FIELD_MOM)),
                     "yoy_pct": _to_float(row.get(FIELD_YOY)),
                 }
