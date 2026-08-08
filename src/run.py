@@ -62,8 +62,8 @@ def main():
         rev = revenue_map.get(code)
         if rev:
             r["revenue_month"] = rev["month"]
-            r["revenue_mom_pct"] = rev["mom_pct"]
-            r["revenue_yoy_pct"] = rev["yoy_pct"]
+            r["revenue_mom_pct"] = round(rev["mom_pct"], 2) if rev["mom_pct"] is not None else None
+            r["revenue_yoy_pct"] = round(rev["yoy_pct"], 2) if rev["yoy_pct"] is not None else None
         else:
             r["revenue_month"] = None
             r["revenue_mom_pct"] = None
