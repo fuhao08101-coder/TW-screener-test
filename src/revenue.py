@@ -6,11 +6,19 @@
 import requests
 
 REVENUE_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap05_L"
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; tw-screener/1.0)"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+}
+
+# 正確欄位名稱(用連字號「-」,不是底線,且百分比欄位帶「(%)」)
+FIELD_CODE = "公司代號"
+FIELD_MONTH = "資料年月"
+FIELD_MOM = "營業收入-上月比較增減(%)"
+FIELD_YOY = "營業收入-去年同月增減(%)"
 
 
 def _to_float(s):
-    """證交所回傳的數字有時是字串、有逗號、或空字串,安全轉成float,轉不了回傳None"""
     if s is None:
         return None
     try:
@@ -23,43 +31,51 @@ def _to_float(s):
 
 
 def get_monthly_revenue() -> dict:
-    """
-    回傳 {公司代號(str): {month, mom_pct, yoy_pct}}
-    抓取失敗時回傳空字典,不會讓整個掃描程式當掉。
-    """
+    """回傳 {公司代號(str): {month, mom_pct, yoy_pct}},失敗回傳空字典"""
     out = {}
     try:
         r = requests.get(REVENUE_URL, headers=HEADERS, timeout=30)
-        r.raise_for_status()
+        if r.status_code != 200:
+            print(f"[warn] 月營收API回傳狀態碼異常: {r.status_code}")
+            print(f"[warn] 回應內容前300字: {r.text[:300]!r}")
+            return out
         data = r.json()
     except Exception as e:
         print(f"[warn] 月營收資料抓取失敗: {e}")
+        try:
+            print(f"[warn] 狀態碼: {r.status_code}, 回應內容前300字: {r.text[:300]!r}")
+        except Exception:
+            pass
         return out
 
     for row in data:
-        code = row.get("公司代號")
+        code = row.get(FIELD_CODE)
         if not code:
             continue
         out[code] = {
-            "month": row.get("資料年月"),
-            "mom_pct": _to_float(row.get("營業收入_上月比較增減")),
-            "yoy_pct": _to_float(row.get("營業收入_去年同月增減")),
+            "month": row.get(FIELD_MONTH),
+            "mom_pct": _to_float(row.get(FIELD_MOM)),
+            "yoy_pct": _to_float(row.get(FIELD_YOY)),
         }
     return out
 
 
 if __name__ == "__main__":
-    import requests as _requests
     print("===== 原始API回應檢查 =====")
     try:
-        raw = _requests.get(REVENUE_URL, headers=HEADERS, timeout=30).json()
-        print(f"回傳筆數: {len(raw)}")
-        if raw:
-            print(f"\n第一筆資料的所有欄位名稱與值:")
-            for k, v in raw[0].items():
-                print(f"  {k!r}: {v!r}")
+        resp = requests.get(REVENUE_URL, headers=HEADERS, timeout=30)
+        print(f"HTTP狀態碼: {resp.status_code}")
+        print(f"Content-Type: {resp.headers.get('Content-Type')}")
+        print(f"回應內容前500字:\n{resp.text[:500]}")
+        if resp.status_code == 200:
+            raw = resp.json()
+            print(f"\n回傳筆數: {len(raw)}")
+            if raw:
+                print(f"\n第一筆資料的所有欄位名稱與值:")
+                for k, v in raw[0].items():
+                    print(f"  {k!r}: {v!r}")
     except Exception as e:
-        print(f"❌ API請求失敗: {e}")
+        print(f"❌ 請求過程發生例外: {e}")
 
     print("\n\n===== 用目前程式邏輯解析後的結果 =====")
     rev = get_monthly_revenue()
