@@ -49,6 +49,17 @@ def load_existing_history() -> list[dict]:
 def main():
     print("抓取股票清單...")
     universe = get_universe(include_otc=True)
+
+    twse_count = sum(1 for r in universe if r["market"] == "TWSE")
+    tpex_count = sum(1 for r in universe if r["market"] == "TPEX")
+    print(f"上市: {twse_count} 檔, 上櫃: {tpex_count} 檔")
+
+    MIN_EXPECTED_TWSE = 500   # 正常應該有近千檔以上,低於這個數字視為異常
+    MIN_EXPECTED_TPEX = 300
+    if twse_count < MIN_EXPECTED_TWSE or tpex_count < MIN_EXPECTED_TPEX:
+        print(f"❌ 股票清單異常過少(上市{twse_count}檔/上櫃{tpex_count}檔),")
+        print(f"   判斷是這次外部資料源抓取失敗,放棄這次更新,保留前一天的結果,不寫入殘缺資料。")
+        return
     print(f"共 {len(universe)} 檔,開始掃描...")
 
     results = scan_universe(universe)
