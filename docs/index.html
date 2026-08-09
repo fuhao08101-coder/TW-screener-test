@@ -151,7 +151,6 @@ function renderDay(idx){
             <span class="ticker">${r.ticker.replace('.TWO','').replace('.TW','')}</span>
             <span class="name">${r.name}</span>
             ${r.new_listing ? `<span class="chip" style="background:#3a2a12;border-color:#7a5a1a;color:#e0a83c;">🆕新股(${r.listed_days}日)</span>` : ''}
-            ${r.conference_days_left !== null && r.conference_days_left !== undefined ? `<span class="chip" style="background:#12283a;border-color:#1a5a7a;color:#3ca8e0;">📢法說會${r.conference_days_left === 0 ? '今天' : r.conference_days_left + '天後'}</span>` : ''}
             ${r.same_group_industry ? `<span class="chip" style="background:#1c3a12;border-color:#4a7a1a;color:#8ce03c;">相同族群 [${r.same_group_industry}]</span>` : ''}
           </div>
           <div class="meta">
