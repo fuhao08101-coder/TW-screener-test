@@ -152,6 +152,7 @@ function renderDay(idx){
             <span class="name">${r.name}</span>
             ${r.new_listing ? `<span class="chip" style="background:#3a2a12;border-color:#7a5a1a;color:#e0a83c;">🆕新股(${r.listed_days}日)</span>` : ''}
             ${r.same_group_industry ? `<span class="chip" style="background:#1c3a12;border-color:#4a7a1a;color:#8ce03c;">相同族群 [${r.same_group_industry}]</span>` : ''}
+            ${r.has_block_trade === true ? `<span class="chip" style="background:#3a3212;border:2px solid #e0c83c;color:#f5e050;font-weight:700;">⚠️ 鉅額交易</span>` : ''}
           </div>
           <div class="meta">
             <span>收盤 <b>${r.close}</b></span>
