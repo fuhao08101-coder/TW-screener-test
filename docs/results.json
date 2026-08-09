@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-09 07:36:42",
+  "generated_at": "2026-08-09 08:06:27",
   "history": [
     {
       "date": "2026-08-09",
-      "generated_at": "2026-08-09 07:36:42",
+      "generated_at": "2026-08-09 08:06:27",
       "params": {
         "lookback_days": 30,
         "bias_ma": 15,
@@ -17,7 +17,7 @@
         "atr_min_pct_threshold": 1.5,
         "require_atr_min": true
       },
-      "count": 10,
+      "count": 8,
       "results": [
         {
           "ticker": "8039.TW",
@@ -32,8 +32,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "電子零組件業",
           "revenue_mom_pct": -8.66,
-          "revenue_yoy_pct": -6.57
+          "revenue_yoy_pct": -6.57,
+          "same_group_industry": "電子零組件業"
         },
         {
           "ticker": "1303.TW",
@@ -48,26 +50,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "塑膠工業",
           "revenue_mom_pct": -5.88,
-          "revenue_yoy_pct": 31.79
-        },
-        {
-          "ticker": "6907.TWO",
-          "name": "雅特力-KY",
-          "close": 189.0,
-          "ma87": 147.96,
-          "ma_second": null,
-          "atr14": null,
-          "atr14_pct": null,
-          "bias_pct": 35.31,
-          "bias_date": "2026-07-15",
-          "as_of": "2026-08-07",
-          "new_listing": true,
-          "listed_days": 124,
-          "market": "TPEX",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_yoy_pct": 31.79,
+          "same_group_industry": null
         },
         {
           "ticker": "2059.TW",
@@ -82,8 +68,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "電子零組件業",
           "revenue_mom_pct": 17.18,
-          "revenue_yoy_pct": 220.52
+          "revenue_yoy_pct": 220.52,
+          "same_group_industry": "電子零組件業"
         },
         {
           "ticker": "2645.TW",
@@ -98,8 +86,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "航運業",
           "revenue_mom_pct": 8.08,
-          "revenue_yoy_pct": 13.01
+          "revenue_yoy_pct": 13.01,
+          "same_group_industry": null
         },
         {
           "ticker": "6446.TW",
@@ -114,8 +104,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "生技醫療業",
           "revenue_mom_pct": -5.11,
-          "revenue_yoy_pct": 94.88
+          "revenue_yoy_pct": 94.88,
+          "same_group_industry": null
         },
         {
           "ticker": "6166.TW",
@@ -130,8 +122,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "電腦及週邊設備業",
           "revenue_mom_pct": 4.71,
-          "revenue_yoy_pct": 25.89
+          "revenue_yoy_pct": 25.89,
+          "same_group_industry": "電腦及週邊設備業"
         },
         {
           "ticker": "6414.TW",
@@ -146,24 +140,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "電腦及週邊設備業",
           "revenue_mom_pct": 13.36,
-          "revenue_yoy_pct": 56.97
-        },
-        {
-          "ticker": "6538.TWO",
-          "name": "倉和",
-          "close": 145.0,
-          "ma87": 109.82,
-          "ma_second": 85.91,
-          "atr14": 12.09,
-          "atr14_pct": 8.34,
-          "bias_pct": 22.29,
-          "bias_date": "2026-07-01",
-          "as_of": "2026-08-07",
-          "market": "TPEX",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_yoy_pct": 56.97,
+          "same_group_industry": "電腦及週邊設備業"
         },
         {
           "ticker": "6957.TW",
@@ -178,8 +158,10 @@
           "as_of": "2026-08-07",
           "market": "TWSE",
           "revenue_month": "11506",
+          "industry": "其他",
           "revenue_mom_pct": 35.17,
-          "revenue_yoy_pct": 33.53
+          "revenue_yoy_pct": 33.53,
+          "same_group_industry": null
         }
       ]
     },
