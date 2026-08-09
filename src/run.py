@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from universe import get_universe
 from revenue import get_monthly_revenue
+from block_trade import check_batch
 from screener import (
     scan_universe,
     LOOKBACK_DAYS,
@@ -80,6 +81,16 @@ def main():
     for r in results:
         ind = r.get("industry")
         r["same_group_industry"] = ind if (ind and industry_counts.get(ind, 0) >= 2) else None
+
+    print("檢查近3個月鉅額交易紀錄(僅上市TWSE)...")
+    twse_codes = [
+        r["ticker"].replace(".TWO", "").replace(".TW", "")
+        for r in results if r["market"] == "TWSE"
+    ]
+    block_trade_map = check_batch(twse_codes)
+    for r in results:
+        code = r["ticker"].replace(".TWO", "").replace(".TW", "")
+        r["has_block_trade"] = block_trade_map.get(code)  # True/False/None(上櫃或查詢失敗)
 
     tz = timezone(timedelta(hours=8))
     now = datetime.now(tz)
