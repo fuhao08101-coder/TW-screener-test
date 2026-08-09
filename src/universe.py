@@ -14,8 +14,8 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "application/json",
 }
-MAX_RETRIES = 3
-RETRY_DELAY = 3  # 秒
+MAX_RETRIES = 5
+RETRY_DELAY = 5  # 秒
 
 
 def _get_with_retry(url: str, max_retries: int = MAX_RETRIES):
