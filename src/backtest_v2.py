@@ -10,8 +10,9 @@
 
 進場:
   1. 候選訊號日:當天符合完整篩選條件,且股價碰到或跌破15MA/43MA(最低價 <= 均線)
-  2. 訊號日之後,逐日檢查,只要某天收盤價「突破前一天的最高點」(不是訊號日的高點,
-     是逐日滾動比較前一根K棒),當天收盤價進場,這天稱為「進場K棒」
+  2. 訊號日之後,逐日檢查,只要某天「盤中最高價」突破前一天的最高點(用最高價比較,
+     不是收盤價,代表盤中觸價就進場,不用等收盤確認),當天以「突破的價位」(前一天
+     最高點)進場,這天稱為「進場K棒」
 
 停損:
   進場後,只要收盤價跌破「進場K棒的最低點」,當天停損出場
@@ -140,13 +141,14 @@ def simulate_trades_v2(df: pd.DataFrame, ticker: str) -> list[dict]:
 
         else:
             if pending_setup:
-                # 檢查是否突破「前一天」的最高點(逐日滾動)
-                if i >= 1 and c > high.iloc[i - 1]:
+                # 檢查是否盤中突破「前一天」的最高點(用最高價比較,不是收盤價;
+                # 進場價用突破的那個價位,不是當天收盤價,比較貼近真實下單情境)
+                if i >= 1 and h > high.iloc[i - 1]:
                     in_position = True
-                    entry_price = c
+                    entry_price = high.iloc[i - 1]  # 突破價位
                     entry_date = d
                     entry_idx = i
-                    stop_loss_level = l  # 進場K棒的最低點當停損線
+                    stop_loss_level = l  # 進場K棒的最低點當停損線(守底部)
                     pending_setup = False
                     i += 1
                     continue
