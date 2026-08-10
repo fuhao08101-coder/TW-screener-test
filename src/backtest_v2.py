@@ -10,12 +10,15 @@
 
 進場:
   1. 候選訊號日:當天符合完整篩選條件,且股價碰到或跌破15MA/43MA(最低價 <= 均線)
-  2. 訊號日之後,逐日檢查,只要某天「盤中最高價」突破前一天的最高點(用最高價比較,
-     不是收盤價,代表盤中觸價就進場,不用等收盤確認),當天以「突破的價位」(前一天
-     最高點)進場,這天稱為「進場K棒」
+     開始等待進場的這段期間,持續累積「整理期最低點」(給停損用,見下方)
+  2. 訊號日之後,逐日檢查,只要某天「盤中最高價」突破「前一天的最高點」(逐日滾動比較,
+     不是比整段整理期的最高點),當下視為進場,進場價用「被突破的價位」(前一天最高點)
 
 停損:
-  進場後,只要收盤價跌破「進場K棒的最低點」,當天停損出場
+  用「從碰到均線那天開始,一路到進場前累積的整理期最低點」(區間底部)當停損線,
+  不是只看進場那天自己的低點——如果碰均線後整理了好幾天才突破,停損線會涵蓋這整段
+  期間的最低點,比較寬、比較不容易被正常的小幅震盪洗出場。
+  進場後,只要收盤價跌破這條線,當天停損出場。
 
 出場(兩階段):
   階段1(時間停損):進場後持有滿6個交易日,檢查未實現獲利有沒有達到+3%,
@@ -75,7 +78,11 @@ def simulate_trades_v2(df: pd.DataFrame, ticker: str) -> list[dict]:
     days_since_new_high = 0
     trailing_stop_level = None  # 創高後跌破前兩根K棒低點的停利線
 
-    pending_setup = False       # 是否正在等待「突破前一天高點」的進場確認
+    pending_setup = False       # 是否正在等待「突破整理期高點」的進場確認
+    setup_window_high = None    # 整理期累積的最高點(進場突破的比較基準)
+    setup_window_low = None     # 整理期累積的最低點(停損線的來源)
+    setup_days_count = 0        # 整理期已經持續幾天(避免無限期等待)
+    MAX_SETUP_DAYS = 20         # 整理期超過這麼多天還沒突破,就放棄這個訊號重新找
 
     i = min_len
     while i < len(dates):
@@ -88,7 +95,7 @@ def simulate_trades_v2(df: pd.DataFrame, ticker: str) -> list[dict]:
         elig = bool(eligible.iloc[i]) if i < len(eligible) else False
 
         if in_position:
-            # 停損:收盤跌破進場K棒的最低點
+            # 停損:收盤跌破「整理期累積的最低點」(不是進場當天自己的低點)
             if stop_loss_level is not None and c < stop_loss_level:
                 _close_trade(trades, ticker, entry_date, entry_price, d, c, "停損")
                 in_position = False
@@ -141,23 +148,40 @@ def simulate_trades_v2(df: pd.DataFrame, ticker: str) -> list[dict]:
 
         else:
             if pending_setup:
-                # 檢查是否盤中突破「前一天」的最高點(用最高價比較,不是收盤價;
-                # 進場價用突破的那個價位,不是當天收盤價,比較貼近真實下單情境)
+                # 進場突破:只要「當天最高價」超過「前一天的最高點」就進場(逐日滾動比較,
+                # 不是比整段整理期的最高點)。停損線則是用「整段整理期累積的最低點」
+                # (區間底部),這兩個基準不一樣,分開處理。
                 if i >= 1 and h > high.iloc[i - 1]:
                     in_position = True
-                    entry_price = high.iloc[i - 1]  # 突破價位
+                    entry_price = high.iloc[i - 1]  # 突破的價位(前一天高點)
                     entry_date = d
                     entry_idx = i
-                    stop_loss_level = l  # 進場K棒的最低點當停損線(守底部)
+                    stop_loss_level = setup_window_low  # 整理期累積的最低點(區間底部)當停損線
                     pending_setup = False
+                    setup_window_high = None
+                    setup_window_low = None
+                    setup_days_count = 0
                     i += 1
                     continue
-                # 如果又重新符合條件且再次觸及均線,訊號可以持續更新(不強制設限)
 
-            if elig:
+                # 還沒突破,把今天的低點併入整理期累積範圍(持續加寬防守區間)
+                setup_window_low = min(setup_window_low, l)
+                setup_days_count += 1
+
+                if setup_days_count >= MAX_SETUP_DAYS:
+                    # 整理太久還沒突破,放棄這個訊號,回到尋找新訊號的狀態
+                    pending_setup = False
+                    setup_window_high = None
+                    setup_window_low = None
+                    setup_days_count = 0
+
+            if not pending_setup and elig:
                 touched_or_broke = (not pd.isna(m15) and l <= m15) or (not pd.isna(m43) and l <= m43)
                 if touched_or_broke:
                     pending_setup = True
+                    setup_window_high = h
+                    setup_window_low = l
+                    setup_days_count = 1
 
         i += 1
 
