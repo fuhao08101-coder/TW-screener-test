@@ -25,7 +25,7 @@
                   沒有的話,第6個交易日收盤直接賣出
   階段2(獲利啟動後的停利機制,僅在階段1存活且獲利>=3%後才啟動):
     - 持續追蹤「進場後最高收盤價」,只要連續3個交易日沒有創新高,出場
-    - 或者創新高之後,只要收盤跌破「創高那天前面兩根K棒的最低點」,出場
+    - 或者創新高之後,只要收盤跌破「前一根K棒的最低點」,出場(比原本的兩根更嚴謹,更早鎖利)
     - 兩者哪個先發生,就用哪個出場
 
 還原日K:使用 yfinance auto_adjust=True。
@@ -76,7 +76,7 @@ def simulate_trades_v2(df: pd.DataFrame, ticker: str) -> list[dict]:
     activated = False           # 是否已經進入「獲利啟動後」的停利邏輯
     highest_close = None
     days_since_new_high = 0
-    trailing_stop_level = None  # 創高後跌破前兩根K棒低點的停利線
+    trailing_stop_level = None  # 創高後跌破前一根K棒低點的停利線
 
     pending_setup = False       # 是否正在等待「突破整理期高點」的進場確認
     setup_window_high = None    # 整理期累積的最高點(進場突破的比較基準)
@@ -119,21 +119,21 @@ def simulate_trades_v2(df: pd.DataFrame, ticker: str) -> list[dict]:
                         activated = True
                         highest_close = c
                         days_since_new_high = 0
-                        # 創高的參考點:用「啟動當天」往前兩根K棒的低點當初始停利線
-                        if i >= 2:
-                            trailing_stop_level = min(low.iloc[i - 1], low.iloc[i - 2])
+                        # 創高的參考點:用「啟動當天」的前一根K棒低點當初始停利線
+                        if i >= 1:
+                            trailing_stop_level = low.iloc[i - 1]
             else:
-                # 第二階段:追蹤創新高 / 連續未創高 / 跌破前兩根K棒低點
+                # 第二階段:追蹤創新高 / 連續未創高 / 跌破前一根K棒低點
                 if c > highest_close:
                     highest_close = c
                     days_since_new_high = 0
-                    if i >= 2:
-                        trailing_stop_level = min(low.iloc[i - 1], low.iloc[i - 2])
+                    if i >= 1:
+                        trailing_stop_level = low.iloc[i - 1]
                 else:
                     days_since_new_high += 1
 
                 if trailing_stop_level is not None and c < trailing_stop_level:
-                    _close_trade(trades, ticker, entry_date, entry_price, d, c, "停利(跌破創高前兩根K棒低點)")
+                    _close_trade(trades, ticker, entry_date, entry_price, d, c, "停利(跌破創高前一根K棒低點)")
                     in_position = False
                     activated = False
                     i += 1
@@ -273,9 +273,11 @@ def print_stats_v2(trades: list[dict]):
     print("\n" + "=" * 60)
     print("回測結果統計 v2(更精細的進出場邏輯)")
     print("=" * 60)
-    print("\n【與前兩次結果對照】")
-    print("  近2年版(簡單15MA跌破出場): 723筆, 勝率32.4%, 期望值+3.13%")
-    print("  近5年版(含2022逆風期):    1343筆, 勝率31.3%, 期望值+2.17%")
+    print("\n【與前幾次結果對照】")
+    print("  近2年版(簡單15MA跌破出場):        723筆, 勝率32.4%, 期望值+3.13%")
+    print("  近5年版(含2022逆風期):             1343筆, 勝率31.3%, 期望值+2.17%")
+    print("  v2(進場當天低點停損):              2130筆, 勝率35.7%, 期望值+1.91%")
+    print("  v2(整理期低點停損+跌破前2根K停利):  1947筆, 勝率40.9%, 期望值+2.13%")
 
     _stats_for(trades, "v2 全部交易")
 
