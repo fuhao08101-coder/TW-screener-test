@@ -9,9 +9,10 @@
 三個條件同時成立,當天收盤價直接進場放空(訊號本身就是確認事件,不用像V2/V6
 那樣還要再等隔天突破確認)。
 
-【出場:跟v6完全一樣的兩階段框架】
-停損:用「觸發訊號那天的盤中最高價」當防守線,之後只要盤中最高價又突破這條線,
-當下停損回補。
+【出場:跟v6一樣的兩階段框架,停損防守線改為近3日高點+3%緩衝】
+停損:用「進場前近3個交易日(含訊號日)的最高點,再加3%緩衝」當防守線,之後只要
+盤中最高價突破這條線,當下停損回補。(v7原本用訊號日自己的高點當防守線太緊,
+71.7%的交易都在這裡被洗出場,所以放寬成近3天高點+3%緩衝,減少雜訊洗盤)
 階段1(時間停損):放空後持有滿6個交易日,未達+3%獲利就回補。
 階段2(啟動後追蹤):追蹤最低收盤價,連續3天沒創新低就回補;或創新低後收盤漲破
 前一根K棒高點就回補,兩者哪個先發生用哪個。
@@ -28,7 +29,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(__file__))
 from universe import get_universe
 from backtest import (
-    _fetch_batch, _calc_atr, fetch_block_trade_dates, tag_block_trade,
+    _fetch_batch, _calc_atr,
     BATCH_SIZE, BATCH_SLEEP, HISTORY_PERIOD,
 )
 
@@ -43,6 +44,8 @@ ATR_THRESHOLD = 10.0
 HOLD_DAYS_CHECKPOINT = 6
 PROFIT_THRESHOLD_PCT = 3.0
 STALL_DAYS_LIMIT = 3
+STOP_LOOKBACK_DAYS = 3    # 停損防守線:抓近幾天的最高點
+STOP_BUFFER_PCT = 3.0     # 停損防守線:額外加多少%緩衝
 
 
 def simulate_trades_v7(df: pd.DataFrame, ticker: str) -> list[dict]:
@@ -65,7 +68,7 @@ def simulate_trades_v7(df: pd.DataFrame, ticker: str) -> list[dict]:
     entry_price = None
     entry_date = None
     entry_idx = None
-    stop_loss_level = None  # 觸發訊號那天的盤中最高價
+    stop_loss_level = None  # 進場防守線(近3日高點+3%緩衝)
 
     activated = False
     lowest_close = None
@@ -81,10 +84,10 @@ def simulate_trades_v7(df: pd.DataFrame, ticker: str) -> list[dict]:
         a = atr14.iloc[i]
 
         if in_short:
-            # 停損:盤中最高價突破訊號日高點
+            # 停損:盤中最高價突破防守線(近3日最高點+3%緩衝)
             if stop_loss_level is not None and h > stop_loss_level:
                 _close_trade(trades, ticker, entry_date, entry_price, d, stop_loss_level,
-                             "停損(盤中突破訊號日高點)", side="short")
+                             "停損(盤中突破近3日高點+3%緩衝)", side="short")
                 in_short = False
                 activated = False
                 i += 1
@@ -152,7 +155,9 @@ def simulate_trades_v7(df: pd.DataFrame, ticker: str) -> list[dict]:
                         entry_price = c
                         entry_date = d
                         entry_idx = i
-                        stop_loss_level = h  # 訊號日的盤中最高價當防守線
+                        lookback_start = max(0, i - (STOP_LOOKBACK_DAYS - 1))
+                        recent_high = high.iloc[lookback_start:i + 1].max()  # 近3天(含訊號日)最高點
+                        stop_loss_level = recent_high * (1 + STOP_BUFFER_PCT / 100.0)
 
         i += 1
 
@@ -205,19 +210,7 @@ def run_backtest_v7(max_stocks: int | None = None):
                 print(f"[warn] {t} 回測失敗: {e}")
         time.sleep(BATCH_SLEEP)
 
-    print(f"\n產生 {len(all_trades)} 筆交易,開始查鉅額交易紀錄(僅能涵蓋今年的交易)...")
-    twse_codes_this_year = set(
-        t["ticker"].replace(".TWO", "").replace(".TW", "")
-        for t in all_trades
-        if date.fromisoformat(t["entry_date"]).year == date.today().year
-        and t["ticker"].endswith(".TW")
-    )
-    block_trade_cache = {}
-    for code in twse_codes_this_year:
-        block_trade_cache[code] = fetch_block_trade_dates(code)
-        time.sleep(0.5)
-    tag_block_trade(all_trades, block_trade_cache)
-
+    print(f"\n產生 {len(all_trades)} 筆交易。")
     return all_trades
 
 
@@ -255,15 +248,6 @@ def print_stats_v7(trades: list[dict]):
 
     _stats_for(trades, "v7 全部交易")
 
-    yes_group = [t for t in trades if t.get("block_trade_group") == "yes"]
-    no_group = [t for t in trades if t.get("block_trade_group") == "no"]
-    unknown_group = [t for t in trades if t.get("block_trade_group") == "unknown"]
-
-    print(f"\n--- 鉅額交易分組比較(僅今年交易可分組,共{len(yes_group)+len(no_group)}筆;"
-          f"另有{len(unknown_group)}筆因年份太早無法判斷)---")
-    _stats_for(yes_group, "v7 近3個月有鉅額交易紀錄")
-    _stats_for(no_group, "v7 近3個月無鉅額交易紀錄")
-
     print(f"\n--- 出場原因分布 ---")
     reason_counts = {}
     for t in trades:
@@ -279,13 +263,13 @@ def print_stats_v7(trades: list[dict]):
     for t in sorted(trades, key=lambda x: x["return_pct"], reverse=True)[:10]:
         print(f"  {t['ticker']}: {t['entry_date']}進場 → {t['exit_date']}出場, "
               f"報酬 {t['return_pct']:+.2f}%, 持有{t['holding_days']}天, "
-              f"出場原因={t.get('exit_reason')}, 鉅額交易={t.get('block_trade_group')}")
+              f"出場原因={t.get('exit_reason')}")
 
     print(f"\n報酬率最差的10筆交易:")
     for t in sorted(trades, key=lambda x: x["return_pct"])[:10]:
         print(f"  {t['ticker']}: {t['entry_date']}進場 → {t['exit_date']}出場, "
               f"報酬 {t['return_pct']:+.2f}%, 持有{t['holding_days']}天, "
-              f"出場原因={t.get('exit_reason')}, 鉅額交易={t.get('block_trade_group')}")
+              f"出場原因={t.get('exit_reason')}")
 
 
 if __name__ == "__main__":
