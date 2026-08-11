@@ -43,6 +43,8 @@ BIAS_MIN_THRESHOLD_V5 = 10.0  # 篩選條件:15MA乖離門檻(%)
 
 STOPLOSS_LOOKBACK_DAYS = 3    # 停損:進場前幾天的最高點
 MAX_SETUP_DAYS = 20           # 訊號後最多等幾天沒破底,就放棄這個訊號
+SANITY_MAX_RETURN_PCT = 80.0  # 單筆交易報酬率超過這個絕對值,視為資料錯誤,不計入統計
+SANITY_MAX_DAILY_JUMP = 3.0   # 單日股價變動超過這個倍數(比如3倍),視為資料異常,整檔股票跳過
 
 
 def compute_eligible_v5(df: pd.DataFrame) -> pd.Series:
@@ -63,6 +65,12 @@ def simulate_short_trades(df: pd.DataFrame, ticker: str) -> list[dict]:
 
     min_len = max(MA_LONG, ATR_PERIOD, STOPLOSS_LOOKBACK_DAYS) + 20
     if len(close) < min_len:
+        return []
+
+    # 資料合理性檢查:單日股價變動超過設定倍數,視為資料異常,整檔股票直接跳過不回測
+    daily_ratio = close / close.shift(1)
+    if ((daily_ratio > SANITY_MAX_DAILY_JUMP) | (daily_ratio < 1 / SANITY_MAX_DAILY_JUMP)).any():
+        print(f"[warn] {ticker} 股價資料出現異常單日跳動,判斷是資料錯誤,整檔跳過不回測")
         return []
 
     ma15 = close.rolling(MA_SHORT).mean()
@@ -93,6 +101,12 @@ def simulate_short_trades(df: pd.DataFrame, ticker: str) -> list[dict]:
             # 停損:收盤漲回停損線之上
             if stop_loss_level is not None and c > stop_loss_level:
                 ret_pct = (entry_price - c) / entry_price * 100.0
+                if abs(ret_pct) > SANITY_MAX_RETURN_PCT:
+                    print(f"[warn] {ticker} {entry_date}~{d} 報酬率異常({ret_pct:.1f}%),"
+                          f"判斷是資料錯誤,不計入統計")
+                    in_position = False
+                    i += 1
+                    continue
                 trades.append({
                     "ticker": ticker,
                     "entry_date": entry_date.strftime("%Y-%m-%d"),
@@ -113,6 +127,12 @@ def simulate_short_trades(df: pd.DataFrame, ticker: str) -> list[dict]:
             if touched_15 or touched_43:
                 exit_price = m15 if touched_15 else m43
                 ret_pct = (entry_price - exit_price) / entry_price * 100.0
+                if abs(ret_pct) > SANITY_MAX_RETURN_PCT:
+                    print(f"[warn] {ticker} {entry_date}~{d} 報酬率異常({ret_pct:.1f}%),"
+                          f"判斷是資料錯誤,不計入統計")
+                    in_position = False
+                    i += 1
+                    continue
                 trades.append({
                     "ticker": ticker,
                     "entry_date": entry_date.strftime("%Y-%m-%d"),
