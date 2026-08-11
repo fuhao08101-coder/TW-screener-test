@@ -4,16 +4,16 @@
 【進場訊號:乖離背離放空】(驗證邏輯見 screener_short_divergence.py)
 1. 往前找近25個交易日內,乖離率(收盤價相對15MA)曾經 >10% 的那個「最高乖離參考日」
 2. 當天「盤中最高價」超過「參考日的收盤價」(創新高,用盤中價比對,不是收盤價),
-   且「當天的乖離率」比參考日小(背離、動能減弱)
+   且「當天的乖離率」小於參考日乖離的一半(訊號加嚴:不是隨便小一點就算,
+   要縮小超過一半才算真正的動能衰竭)
 3. 當天 ATR14 > 10
-三個條件同時成立,當天收盤價直接進場放空(訊號本身就是確認事件,不用像V2/V6
-那樣還要再等隔天突破確認)。
+三個條件同時成立,當天收盤價直接進場放空。
 
-【出場:跟v6一樣的兩階段框架,停損防守線改為近3日高點+3%緩衝】
+【出場:跟v6一樣的兩階段框架,停損防守線為近3日高點+3%緩衝】
 停損:用「進場前近3個交易日(含訊號日)的最高點,再加3%緩衝」當防守線,之後只要
-盤中最高價突破這條線,當下停損回補。(v7原本用訊號日自己的高點當防守線太緊,
-71.7%的交易都在這裡被洗出場,所以放寬成近3天高點+3%緩衝,減少雜訊洗盤)
-階段1(時間停損):放空後持有滿6個交易日,未達+3%獲利就回補。
+盤中最高價突破這條線,當下停損回補。
+階段1(時間停損):放空後持有滿3個交易日(原本6天,縮短加速停損反應),未達+3%
+獲利就回補。
 階段2(啟動後追蹤):追蹤最低收盤價,連續3天沒創新低就回補;或創新低後收盤漲破
 前一根K棒高點就回補,兩者哪個先發生用哪個。
 
@@ -39,9 +39,10 @@ REF_LOOKBACK_DAYS = 25
 REF_BIAS_THRESHOLD = 10.0
 ATR_PERIOD = 14
 ATR_THRESHOLD = 10.0
+DIVERGENCE_SHRINK_RATIO = 0.5  # 訊號加嚴:今天乖離必須小於參考日乖離的一半,不是隨便小一點就算
 
-# 出場參數(跟v6一致)
-HOLD_DAYS_CHECKPOINT = 6
+# 出場參數
+HOLD_DAYS_CHECKPOINT = 3   # 時間停損天數(原本6天,縮短到3天,讓虧損部位提早認賠)
 PROFIT_THRESHOLD_PCT = 3.0
 STALL_DAYS_LIMIT = 3
 STOP_LOOKBACK_DAYS = 3    # 停損防守線:抓近幾天的最高點
@@ -147,7 +148,7 @@ def simulate_trades_v7(df: pd.DataFrame, ticker: str) -> list[dict]:
 
                 if not pd.isna(ref_bias) and ref_bias > REF_BIAS_THRESHOLD:
                     made_new_high = h > ref_close
-                    bias_shrunk = b < ref_bias
+                    bias_shrunk = b < ref_bias * DIVERGENCE_SHRINK_RATIO
                     atr_ok = a > ATR_THRESHOLD
 
                     if made_new_high and bias_shrunk and atr_ok:
