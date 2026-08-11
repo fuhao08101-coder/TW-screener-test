@@ -1,29 +1,32 @@
 """
-回測工具 v3:跟 v2 唯一的差別是「發動後的停利觸發方式」,其他規則完全相同。
-用來單獨測試「跌破前一根K棒低點」VS「跌破15MA」哪一種停利效果更好。
+回測工具 v3:基於 backtest_v2.py,唯一差異是「第一階段時間停損」的檢查天數
+從持有滿6個交易日,縮短為持有滿3個交易日。
 
-【重複使用 backtest.py 的部分】:
-  - 「歷史上是否符合正式版完整篩選條件」的逐日判斷(compute_eligible_mask)
-  - 鉅額交易分組邏輯(fetch_block_trade_dates / tag_block_trade)
-  - 批次下載機制(_fetch_batch)
+【與 v2 完全相同的部分】:
+- 進場、停損、第二階段停利邏輯,完全沿用 v2 的設計(見下方說明)
+- 重複使用 backtest.py 的「歷史上是否符合正式版完整篩選條件」判斷(compute_eligible_mask)
+- 鉅額交易分組邏輯(fetch_block_trade_dates / tag_block_trade)
+- 批次下載機制(_fetch_batch)
 
 進場:
-  1. 候選訊號日:當天符合完整篩選條件,且股價碰到或跌破15MA/43MA(最低價 <= 均線)
-     開始等待進場的這段期間,持續累積「整理期最低點」(給停損用,見下方)
-  2. 訊號日之後,逐日檢查,只要某天「盤中最高價」突破「前一天的最高點」(逐日滾動比較,
-     不是比整段整理期的最高點),當下視為進場,進場價用「被突破的價位」(前一天最高點)
+1. 候選訊號日:當天符合完整篩選條件,且股價碰到或跌破15MA/43MA(最低價 <= 均線)
+   開始等待進場的這段期間,持續累積「整理期最低點」(給停損用,見下方)
+2. 訊號日之後,逐日檢查,只要某天「盤中最高價」突破「前一天的最高點」(逐日滾動比較,
+   不是比整段整理期的最高點),當下視為進場,進場價用「被突破的價位」(前一天最高點)
 
 停損:
-  用「從碰到均線那天開始,一路到進場前累積的整理期最低點」(區間底部)當停損線,
-  不是只看進場那天自己的低點。進場後,只要收盤價跌破這條線,當天停損出場。
+用「從碰到均線那天開始,一路到進場前累積的整理期最低點」(區間底部)當停損線,
+不是只看進場那天自己的低點——如果碰均線後整理了好幾天才突破,停損線會涵蓋這整段
+期間的最低點,比較寬、比較不容易被正常的小幅震盪洗出場。
+進場後,只要收盤價跌破這條線,當天停損出場。
 
-出場(兩階段):
-  階段1(時間停損):進場後持有滿6個交易日,檢查未實現獲利有沒有達到+3%,
-                  沒有的話,第6個交易日收盤直接賣出
-  階段2(獲利啟動後的停利機制,僅在階段1存活且獲利>=3%後才啟動):
-    - 持續追蹤「進場後最高收盤價」,只要連續3個交易日沒有創新高,出場
-    - 【v3改動】或者收盤跌破15MA,出場(取代v2的「跌破前一根K棒低點」)
-    - 兩者哪個先發生,就用哪個出場
+出場(兩階段,v3 唯一改動處在階段1的天數):
+階段1(時間停損):進場後持有滿3個交易日(v2是6天),檢查未實現獲利有沒有達到+3%,
+沒有的話,第3個交易日收盤直接賣出(判斷條件維持不變,只是天數縮短)
+階段2(獲利啟動後的停利機制,僅在階段1存活且獲利>=3%後才啟動):
+- 持續追蹤「進場後最高收盤價」,只要連續3個交易日沒有創新高,出場
+- 或者創新高之後,只要收盤跌破「前一根K棒的最低點」,出場(比原本的兩根更嚴謹,更早鎖利)
+- 兩者哪個先發生,就用哪個出場
 
 還原日K:使用 yfinance auto_adjust=True。
 """
@@ -42,9 +45,9 @@ from backtest import (
     LONG_MA_PERIOD, SECOND_MA_PERIOD, ATR_PERIOD,
 )
 
-HOLD_DAYS_CHECKPOINT = 6      # 第一階段:持有幾個交易日後檢查獲利門檻
-PROFIT_THRESHOLD_PCT = 3.0    # 第一階段:獲利門檻(%)
-STALL_DAYS_LIMIT = 3          # 第二階段:連續幾天沒創新高就出場
+HOLD_DAYS_CHECKPOINT = 3   # 第一階段:持有幾個交易日後檢查獲利門檻(v2是6天,v3改成3天)
+PROFIT_THRESHOLD_PCT = 3.0  # 第一階段:獲利門檻(%)
+STALL_DAYS_LIMIT = 3        # 第二階段:連續幾天沒創新高就出場
 
 
 def simulate_trades_v3(df: pd.DataFrame, ticker: str) -> list[dict]:
@@ -70,10 +73,10 @@ def simulate_trades_v3(df: pd.DataFrame, ticker: str) -> list[dict]:
     stop_loss_level = None
 
     # 第二階段追蹤用的狀態
-    activated = False           # 是否已經進入「獲利啟動後」的停利邏輯
+    activated = False          # 是否已經進入「獲利啟動後」的停利邏輯
     highest_close = None
     days_since_new_high = 0
-    # (v3不需要trailing_stop_level,改用15MA直接判斷)
+    trailing_stop_level = None  # 創高後跌破前一根K棒低點的停利線
 
     pending_setup = False       # 是否正在等待「突破整理期高點」的進場確認
     setup_window_high = None    # 整理期累積的最高點(進場突破的比較基準)
@@ -103,7 +106,7 @@ def simulate_trades_v3(df: pd.DataFrame, ticker: str) -> list[dict]:
             holding_days = i - entry_idx  # 進場當天算第0天
 
             if not activated:
-                # 第一階段:第6個交易日檢查獲利門檻
+                # 第一階段:持有滿 HOLD_DAYS_CHECKPOINT 天後檢查獲利門檻
                 if holding_days >= HOLD_DAYS_CHECKPOINT:
                     ret_pct = (c - entry_price) / entry_price * 100.0
                     if ret_pct < PROFIT_THRESHOLD_PCT:
@@ -116,17 +119,21 @@ def simulate_trades_v3(df: pd.DataFrame, ticker: str) -> list[dict]:
                         activated = True
                         highest_close = c
                         days_since_new_high = 0
+                        # 創高的參考點:用「啟動當天」的前一根K棒低點當初始停利線
+                        if i >= 1:
+                            trailing_stop_level = low.iloc[i - 1]
             else:
-                # 第二階段(v3版本):追蹤創新高 / 連續未創高 / 跌破15MA
+                # 第二階段:追蹤創新高 / 連續未創高 / 跌破前一根K棒低點
                 if c > highest_close:
                     highest_close = c
                     days_since_new_high = 0
+                    if i >= 1:
+                        trailing_stop_level = low.iloc[i - 1]
                 else:
                     days_since_new_high += 1
 
-                # v3改動:用「收盤跌破15MA」取代「跌破前一根K棒低點」當停利觸發
-                if not pd.isna(m15) and c < m15:
-                    _close_trade(trades, ticker, entry_date, entry_price, d, c, "停利(跌破15MA)")
+                if trailing_stop_level is not None and c < trailing_stop_level:
+                    _close_trade(trades, ticker, entry_date, entry_price, d, c, "停利(跌破創高前一根K棒低點)")
                     in_position = False
                     activated = False
                     i += 1
@@ -138,7 +145,6 @@ def simulate_trades_v3(df: pd.DataFrame, ticker: str) -> list[dict]:
                     activated = False
                     i += 1
                     continue
-
         else:
             if pending_setup:
                 # 進場突破:只要「當天最高價」超過「前一天的最高點」就進場(逐日滾動比較,
@@ -160,7 +166,6 @@ def simulate_trades_v3(df: pd.DataFrame, ticker: str) -> list[dict]:
                 # 還沒突破,把今天的低點併入整理期累積範圍(持續加寬防守區間)
                 setup_window_low = min(setup_window_low, l)
                 setup_days_count += 1
-
                 if setup_days_count >= MAX_SETUP_DAYS:
                     # 整理太久還沒突破,放棄這個訊號,回到尋找新訊號的狀態
                     pending_setup = False
@@ -201,7 +206,7 @@ def run_backtest_v3(max_stocks: int | None = None):
     universe = get_universe(include_otc=True)
     if max_stocks:
         universe = universe[:max_stocks]
-    print(f"共 {len(universe)} 檔,開始回測(v2進出場邏輯)...")
+    print(f"共 {len(universe)} 檔,開始回測(v3進出場邏輯,時間停損改3天)...")
 
     all_tickers = [row["ticker"] for row in universe]
     batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
@@ -243,6 +248,7 @@ def _stats_for(trades: list[dict], label: str):
     if not trades:
         print(f"\n【{label}】沒有交易紀錄。")
         return
+
     total = len(trades)
     wins = [t for t in trades if t["return_pct"] > 0]
     losses = [t for t in trades if t["return_pct"] <= 0]
@@ -264,16 +270,16 @@ def _stats_for(trades: list[dict], label: str):
 
 def print_stats_v3(trades: list[dict]):
     print("\n" + "=" * 60)
-    print("回測結果統計 v3(發動後改用跌破15MA停利,對比v2的跌破前1根K棒)")
+    print("回測結果統計 v3(時間停損天數從6天改成3天,其餘與v2相同)")
     print("=" * 60)
+
     print("\n【與前幾次結果對照】")
     print("  近2年版(簡單15MA跌破出場):        723筆, 勝率32.4%, 期望值+3.13%")
-    print("  近5年版(含2022逆風期):             1343筆, 勝率31.3%, 期望值+2.17%")
-    print("  v2(整理期停損+跌破前2根K停利):     1947筆, 勝率40.9%, 期望值+2.13%")
-    print("  v2(整理期停損+跌破前1根K停利):     1974筆, 勝率41.7%, 期望值+2.23%")
-    print("  v3(整理期停損+發動後跌破15MA停利): 這次結果 ↓")
+    print("  近5年版(含2022逆風期):            1343筆, 勝率31.3%, 期望值+2.17%")
+    print("  v2(進場當天低點停損):              2130筆, 勝率35.7%, 期望值+1.91%")
+    print("  v2(整理期低點停損+跌破前2根K停利):  1947筆, 勝率40.9%, 期望值+2.13%")
 
-    _stats_for(trades, "v2 全部交易")
+    _stats_for(trades, "v3 全部交易")
 
     yes_group = [t for t in trades if t.get("block_trade_group") == "yes"]
     no_group = [t for t in trades if t.get("block_trade_group") == "no"]
@@ -281,8 +287,8 @@ def print_stats_v3(trades: list[dict]):
 
     print(f"\n--- 鉅額交易分組比較(僅今年交易可分組,共{len(yes_group)+len(no_group)}筆;"
           f"另有{len(unknown_group)}筆因年份太早無法判斷)---")
-    _stats_for(yes_group, "v2 近3個月有鉅額交易紀錄")
-    _stats_for(no_group, "v2 近3個月無鉅額交易紀錄")
+    _stats_for(yes_group, "v3 近3個月有鉅額交易紀錄")
+    _stats_for(no_group, "v3 近3個月無鉅額交易紀錄")
 
     # 出場原因分布,方便你了解交易大多是怎麼結束的
     print(f"\n--- 出場原因分布 ---")
