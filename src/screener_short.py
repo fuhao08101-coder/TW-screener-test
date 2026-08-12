@@ -14,24 +14,94 @@
 """
 from __future__ import annotations
 import time
+import re
+from datetime import date, datetime
 import pandas as pd
 import yfinance as yf
+import requests
 
 # ------- 可調參數 -------
 BIAS_MA_PERIOD = 15          # 15MA
-REF_LOOKBACK_DAYS = 25       # 往前找參考日的範圍(交易日)
-REF_BIAS_THRESHOLD = 10.0    # 參考日的乖離率門檻(%)
+REF_LOOKBACK_DAYS = 20       # 往前找參考日的範圍(交易日)
+REF_BIAS_THRESHOLD = 15.0    # 參考日的乖離率門檻(%)
 
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 10.0     # 訊號日ATR14「絕對值」門檻
 
-HISTORY_PERIOD = "2y"        # 抓多久的歷史資料(要夠算25日lookback+15MA+ATR14)
+REQUIRE_PUT_WARRANT = True   # 是否要求「該股票目前有認售權證可買」才納入結果
+
+HISTORY_PERIOD = "2y"        # 抓多久的歷史資料(要夠算lookback+15MA+ATR14)
 BATCH_SIZE = 150
 BATCH_SLEEP = 1.0
+
+WARRANT_INFO_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap37_L"
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+}
 # ------------------------
 
 
-def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
+def _parse_twse_date(s: str) -> date | None:
+    """嘗試解析TWSE常見的日期格式(西元年或民國年),失敗回傳None"""
+    s = (s or "").strip()
+    if not s:
+        return None
+    for fmt in ("%Y/%m/%d", "%Y-%m-%d", "%Y%m%d"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    # 民國年格式,例如 115/08/12
+    m = re.match(r"^(\d{2,3})/(\d{1,2})/(\d{1,2})$", s)
+    if m:
+        try:
+            return date(int(m.group(1)) + 1911, int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            return None
+    return None
+
+
+def fetch_put_warrant_underlyings() -> set[str]:
+    """
+    抓「上市權證基本資料」,回傳目前還沒到期、類型為「認售」的權證,
+    其標的股票代號集合(只查一次,不是逐檔股票查,避免速度太慢)。
+    查詢失敗回傳空集合(此時 REQUIRE_PUT_WARRANT 篩選會讓所有股票被濾掉,
+    需要留意 log 裡的警告訊息)。
+    """
+    try:
+        r = requests.get(WARRANT_INFO_URL, headers=HEADERS, timeout=30)
+        if r.status_code != 200:
+            print(f"[warn] 認售權證清單查詢失敗,status={r.status_code}")
+            return set()
+        data = r.json()
+    except Exception as e:
+        print(f"[warn] 認售權證清單查詢失敗: {e}")
+        return set()
+
+    today = date.today()
+    underlyings: set[str] = set()
+    for row in data:
+        try:
+            wtype = row.get("權證類型", "") or ""
+            if "認售" not in wtype:
+                continue
+            last_day = _parse_twse_date(row.get("最後交易日", ""))
+            if last_day is not None and last_day < today:
+                continue  # 已經到期下市的權證不算數
+
+            underlying_raw = (row.get("標的證券/指數", "") or "").strip()
+            m = re.match(r"(\d{4,6})", underlying_raw)
+            if m:
+                underlyings.add(m.group(1))
+        except Exception:
+            continue
+
+    print(f"目前有效認售權證涵蓋 {len(underlyings)} 檔標的股票")
+    return underlyings
+
+
+
     high = df["High"]
     low = df["Low"]
     prev_close = df["Close"].shift(1)
@@ -142,6 +212,11 @@ def scan_universe_short(universe: list[dict], progress: bool = True) -> list[dic
     total = len(universe)
     ticker_to_name = {row["ticker"]: row for row in universe}
 
+    put_warrant_underlyings: set[str] = set()
+    if REQUIRE_PUT_WARRANT:
+        print("查詢目前有效的認售權證清單...")
+        put_warrant_underlyings = fetch_put_warrant_underlyings()
+
     all_tickers = [row["ticker"] for row in universe]
     batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
 
@@ -157,6 +232,12 @@ def scan_universe_short(universe: list[dict], progress: bool = True) -> list[dic
             row = ticker_to_name.get(t)
             if row is None:
                 continue
+
+            if REQUIRE_PUT_WARRANT:
+                code = t.replace(".TWO", "").replace(".TW", "")
+                if code not in put_warrant_underlyings:
+                    continue  # 沒有認售權證可買,不納入結果
+
             df = batch_data.get(t)
             try:
                 hit = _evaluate_from_df(df, t, row["name"])
