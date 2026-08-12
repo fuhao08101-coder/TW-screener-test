@@ -9,7 +9,8 @@
   當天收盤價直接放空進場(訊號當天即進場,不用等額外確認)
 
 停損:
-  用「進場前3個交易日的最高點」當停損線(固定),收盤漲回這條線之上就停損回補
+  用「進場當天自己的最高點」當停損線(因為進場當天本身就是創高日,用進場前幾天的
+  高點會比進場價還低,邏輯上不合理)。收盤漲得比進場當天的最高點還高,就停損回補。
 
 出場(獲利了結):
   股價(最低價)碰到15MA或43MA,在碰到的均線價位回補
@@ -162,8 +163,7 @@ def simulate_v8_trades(df: pd.DataFrame, ticker: str) -> list[dict]:
                 in_position = True
                 entry_price = c
                 entry_date = d
-                lookback_start = max(0, i - STOPLOSS_LOOKBACK_DAYS)
-                stop_loss_level = high.iloc[lookback_start:i].max()
+                stop_loss_level = high.iloc[i]  # 進場當天(創高日)自己的最高點
 
         i += 1
 
