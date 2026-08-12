@@ -30,6 +30,9 @@ ATR_MIN_THRESHOLD = 10.0     # 訊號日ATR14「絕對值」門檻
 
 REQUIRE_PUT_WARRANT = False  # 認售權證檢查(TWSE API不穩定,關閉,改手動判斷)
 
+REVENUE_URL_TWSE = "https://openapi.twse.com.tw/v1/opendata/t187ap05_P"
+REVENUE_URL_TPEX = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap05_O"  # 上櫃對應端點,欄位格式未100%驗證
+
 HISTORY_PERIOD = "2y"        # 抓多久的歷史資料(要夠算lookback+15MA+ATR14)
 BATCH_SIZE = 150
 BATCH_SLEEP = 1.0
@@ -99,6 +102,68 @@ def fetch_put_warrant_underlyings() -> set[str]:
 
     print(f"目前有效認售權證涵蓋 {len(underlyings)} 檔標的股票")
     return underlyings
+
+
+def _first_present(row: dict, keys: list[str]):
+    """依序嘗試多個可能的欄位名稱(TWSE/TPEX格式不一定一致),回傳第一個有值的"""
+    for k in keys:
+        if k in row and row[k] not in (None, ""):
+            return row[k]
+    return None
+
+
+def _parse_pct(v) -> float | None:
+    try:
+        if v is None or v == "":
+            return None
+        return round(float(v), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def fetch_revenue_map() -> dict[str, dict]:
+    """
+    抓上市(TWSE)+上櫃(TPEX)的最新月營收資料,回傳 {股票代號: {revenue_month, revenue_mom_pct, revenue_yoy_pct}}。
+    上市欄位已用官方swagger文件核對過;上櫃端點/欄位格式沒有100%驗證,如果跑出來上櫃股票
+    都沒有營收資料,把log貼回來,我再依實際回傳格式調整。
+    """
+    revenue_map: dict[str, dict] = {}
+
+    for url, label in [(REVENUE_URL_TWSE, "上市"), (REVENUE_URL_TPEX, "上櫃")]:
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=30)
+            if r.status_code != 200:
+                print(f"[warn] {label}營收資料查詢失敗,status={r.status_code}")
+                continue
+            data = r.json()
+            if not isinstance(data, list):
+                print(f"[warn] {label}營收資料格式不是預期的list,略過")
+                continue
+        except Exception as e:
+            print(f"[warn] {label}營收資料查詢失敗: {e}")
+            continue
+
+        count = 0
+        for row in data:
+            try:
+                code = (_first_present(row, ["公司代號", "SecuritiesCompanyCode", "Code"]) or "").strip()
+                if not code:
+                    continue
+                revenue_map[code] = {
+                    "revenue_month": _first_present(row, ["資料年月", "DataDate"]),
+                    "revenue_mom_pct": _parse_pct(_first_present(row, [
+                        "營業收入-上月比較增減(%)", "營業收入_上月比較增減", "MoM",
+                    ])),
+                    "revenue_yoy_pct": _parse_pct(_first_present(row, [
+                        "營業收入-去年同月增減(%)", "營業收入_去年同月增減", "YoY",
+                    ])),
+                }
+                count += 1
+            except Exception:
+                continue
+        print(f"{label}營收資料涵蓋 {count} 檔股票")
+
+    return revenue_map
 
 
 
@@ -218,6 +283,9 @@ def scan_universe_short(universe: list[dict], progress: bool = True) -> list[dic
         print("查詢目前有效的認售權證清單...")
         put_warrant_underlyings = fetch_put_warrant_underlyings()
 
+    print("查詢最新月營收資料...")
+    revenue_map = fetch_revenue_map()
+
     all_tickers = [row["ticker"] for row in universe]
     batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
 
@@ -244,6 +312,11 @@ def scan_universe_short(universe: list[dict], progress: bool = True) -> list[dic
                 hit = _evaluate_from_df(df, t, row["name"])
                 if hit:
                     hit["market"] = row["market"]
+                    code = t.replace(".TWO", "").replace(".TW", "")
+                    rev = revenue_map.get(code, {})
+                    hit["revenue_month"] = rev.get("revenue_month")
+                    hit["revenue_mom_pct"] = rev.get("revenue_mom_pct")
+                    hit["revenue_yoy_pct"] = rev.get("revenue_yoy_pct")
                     results.append(hit)
             except Exception as e:
                 print(f"[warn] {t} 判斷失敗: {e}")
