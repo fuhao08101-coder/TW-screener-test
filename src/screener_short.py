@@ -30,8 +30,10 @@ ATR_MIN_THRESHOLD = 10.0     # 訊號日ATR14「絕對值」門檻
 
 REQUIRE_PUT_WARRANT = False  # 認售權證檢查(TWSE API不穩定,關閉,改手動判斷)
 
-REVENUE_URL_TWSE = "https://openapi.twse.com.tw/v1/opendata/t187ap05_P"
-REVENUE_URL_TPEX = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap05_O"  # 上櫃對應端點,欄位格式未100%驗證
+REVENUE_URL_TWSE = "https://openapi.twse.com.tw/v1/opendata/t187ap05_L"
+REVENUE_URL_TPEX = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap05_O"
+REVENUE_MAX_RETRIES = 3
+REVENUE_RETRY_DELAY = 3  # 秒
 
 HISTORY_PERIOD = "2y"        # 抓多久的歷史資料(要夠算lookback+15MA+ATR14)
 BATCH_SIZE = 150
@@ -104,66 +106,60 @@ def fetch_put_warrant_underlyings() -> set[str]:
     return underlyings
 
 
-def _first_present(row: dict, keys: list[str]):
-    """依序嘗試多個可能的欄位名稱(TWSE/TPEX格式不一定一致),回傳第一個有值的"""
-    for k in keys:
-        if k in row and row[k] not in (None, ""):
-            return row[k]
-    return None
-
-
-def _parse_pct(v) -> float | None:
+def _to_float(s):
+    if s is None:
+        return None
     try:
-        if v is None or v == "":
+        s = str(s).replace(",", "").strip()
+        if s == "" or s == "-":
             return None
-        return round(float(v), 2)
-    except (TypeError, ValueError):
+        return float(s)
+    except (ValueError, TypeError):
         return None
 
 
-def fetch_revenue_map() -> dict[str, dict]:
-    """
-    抓上市(TWSE)+上櫃(TPEX)的最新月營收資料,回傳 {股票代號: {revenue_month, revenue_mom_pct, revenue_yoy_pct}}。
-    上市欄位已用官方swagger文件核對過;上櫃端點/欄位格式沒有100%驗證,如果跑出來上櫃股票
-    都沒有營收資料,把log貼回來,我再依實際回傳格式調整。
-    """
-    revenue_map: dict[str, dict] = {}
-
-    for url, label in [(REVENUE_URL_TWSE, "上市"), (REVENUE_URL_TPEX, "上櫃")]:
+def _fetch_revenue_one(url: str) -> dict:
+    """抓單一市場的月營收,失敗會重試幾次,最終還是失敗回傳空字典(不會讓整個掃描程式當掉)"""
+    out = {}
+    last_error = None
+    for attempt in range(1, REVENUE_MAX_RETRIES + 1):
         try:
             r = requests.get(url, headers=HEADERS, timeout=30)
             if r.status_code != 200:
-                print(f"[warn] {label}營收資料查詢失敗,status={r.status_code}")
+                last_error = f"狀態碼 {r.status_code}"
+                print(f"[warn] 第{attempt}次請求月營收失敗({url}): {last_error}")
+                if attempt < REVENUE_MAX_RETRIES:
+                    time.sleep(REVENUE_RETRY_DELAY)
                 continue
             data = r.json()
-            if not isinstance(data, list):
-                print(f"[warn] {label}營收資料格式不是預期的list,略過")
-                continue
-        except Exception as e:
-            print(f"[warn] {label}營收資料查詢失敗: {e}")
-            continue
-
-        count = 0
-        for row in data:
-            try:
-                code = (_first_present(row, ["公司代號", "SecuritiesCompanyCode", "Code"]) or "").strip()
+            for row in data:
+                code = row.get("公司代號")
                 if not code:
                     continue
-                revenue_map[code] = {
-                    "revenue_month": _first_present(row, ["資料年月", "DataDate"]),
-                    "revenue_mom_pct": _parse_pct(_first_present(row, [
-                        "營業收入-上月比較增減(%)", "營業收入_上月比較增減", "MoM",
-                    ])),
-                    "revenue_yoy_pct": _parse_pct(_first_present(row, [
-                        "營業收入-去年同月增減(%)", "營業收入_去年同月增減", "YoY",
-                    ])),
+                out[code] = {
+                    "month": row.get("資料年月"),
+                    "mom_pct": _to_float(row.get("營業收入-上月比較增減(%)")),
+                    "yoy_pct": _to_float(row.get("營業收入-去年同月增減(%)")),
                 }
-                count += 1
-            except Exception:
-                continue
-        print(f"{label}營收資料涵蓋 {count} 檔股票")
+            return out  # 成功就直接回傳,不用再重試
+        except Exception as e:
+            last_error = str(e)
+            print(f"[warn] 第{attempt}次請求月營收失敗({url}): {last_error}")
+            if attempt < REVENUE_MAX_RETRIES:
+                time.sleep(REVENUE_RETRY_DELAY)
+    print(f"[warn] 月營收抓取重試{REVENUE_MAX_RETRIES}次後仍失敗({url}): {last_error}")
+    return out
 
-    return revenue_map
+
+def fetch_revenue_map() -> dict[str, dict]:
+    """回傳 {公司代號: {month, mom_pct, yoy_pct}},上市+上櫃合併在一起"""
+    twse_data = _fetch_revenue_one(REVENUE_URL_TWSE)
+    tpex_data = _fetch_revenue_one(REVENUE_URL_TPEX)
+    merged = {}
+    merged.update(twse_data)
+    merged.update(tpex_data)
+    print(f"營收資料共取得 {len(merged)} 家公司(上市+上櫃)")
+    return merged
 
 
 
@@ -314,9 +310,9 @@ def scan_universe_short(universe: list[dict], progress: bool = True) -> list[dic
                     hit["market"] = row["market"]
                     code = t.replace(".TWO", "").replace(".TW", "")
                     rev = revenue_map.get(code, {})
-                    hit["revenue_month"] = rev.get("revenue_month")
-                    hit["revenue_mom_pct"] = rev.get("revenue_mom_pct")
-                    hit["revenue_yoy_pct"] = rev.get("revenue_yoy_pct")
+                    hit["revenue_month"] = rev.get("month")
+                    hit["revenue_mom_pct"] = rev.get("mom_pct")
+                    hit["revenue_yoy_pct"] = rev.get("yoy_pct")
                     results.append(hit)
             except Exception as e:
                 print(f"[warn] {t} 判斷失敗: {e}")
