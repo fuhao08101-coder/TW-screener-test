@@ -1,0 +1,232 @@
+"""
+回測工具 v9:v7的乖離背離進場訊號 + v4驗證過最佳的放空停損/回補邏輯。
+
+【進場:跟v7完全一樣】
+1. 往前找近25個交易日內,乖離率(收盤價相對15MA)曾經 >10% 的那個「最高乖離參考日」
+2. 當天「盤中最高價」超過「參考日的收盤價」(創新高,用盤中價比對),
+   且「當天的乖離率」比參考日小(背離、動能減弱)
+3. 當天 ATR14 > 10
+當天收盤價直接進場放空。
+
+【出場:跟v4完全一樣(不是v6/v7的兩階段停利框架)】
+- 停損:反手當下抓「最近3個交易日(含當天)的最高點」當防守線,之後只要
+  盤中最高價突破這條線,當下停損回補
+- 回補(獲利了結):只要當天最低價碰到15MA或43MA,當天用收盤價回補
+沒有時間停損或連續未創新低機制——v4驗證過這套簡單版本本身表現最好,不需要更複雜的框架。
+
+還原日K:使用 yfinance auto_adjust=True。
+"""
+from __future__ import annotations
+import sys
+import os
+import time
+import pandas as pd
+
+sys.path.insert(0, os.path.dirname(__file__))
+from universe import get_universe
+from backtest import (
+    _fetch_batch, _calc_atr,
+    BATCH_SIZE, BATCH_SLEEP, HISTORY_PERIOD, MA_SHORT, MA_LONG,
+)
+
+# 進場訊號參數(跟v7一致)
+BIAS_MA_PERIOD = 15
+REF_LOOKBACK_DAYS = 25
+REF_BIAS_THRESHOLD = 10.0
+ATR_PERIOD = 14
+ATR_THRESHOLD = 10.0
+
+# 出場參數(跟v4一致)
+SHORT_STOP_LOOKBACK_DAYS = 3  # 防守停損線:抓最近幾天的高點
+
+
+def simulate_trades_v9(df: pd.DataFrame, ticker: str) -> list[dict]:
+    close = df["Close"].dropna()
+    high = df["High"]
+    low = df["Low"]
+
+    min_len = max(BIAS_MA_PERIOD + REF_LOOKBACK_DAYS + 5, MA_LONG + 5)
+    if len(close) < min_len:
+        return []
+
+    ma15 = close.rolling(BIAS_MA_PERIOD).mean()
+    ma43 = close.rolling(MA_LONG).mean()
+    bias = (close - ma15) / ma15 * 100.0
+    atr14 = _calc_atr(df, ATR_PERIOD)
+
+    trades = []
+    dates = close.index
+
+    in_short = False
+    entry_price = None
+    entry_date = None
+    stop_loss_level = None
+
+    i = min_len
+    while i < len(dates):
+        d = dates[i]
+        c = close.iloc[i]
+        h = high.iloc[i]
+        l = low.iloc[i]
+        m15 = ma15.iloc[i]
+        m43 = ma43.iloc[i]
+        b = bias.iloc[i]
+        a = atr14.iloc[i]
+
+        if in_short:
+            # 停損:盤中最高價突破防守線(最近3日高點)
+            if stop_loss_level is not None and h > stop_loss_level:
+                _close_trade(trades, ticker, entry_date, entry_price, d, stop_loss_level,
+                             "放空停損(盤中突破近期高點)")
+                in_short = False
+                i += 1
+                continue
+
+            # 回補:當天最低價碰到15MA或43MA
+            touched_ma = (not pd.isna(m15) and l <= m15) or (not pd.isna(m43) and l <= m43)
+            if touched_ma:
+                _close_trade(trades, ticker, entry_date, entry_price, d, c,
+                             "放空回補(觸及15/43MA)")
+                in_short = False
+                i += 1
+                continue
+
+        else:
+            window_start = max(0, i - REF_LOOKBACK_DAYS)
+            window_bias = bias.iloc[window_start:i]
+            if not window_bias.isna().all() and not pd.isna(b) and not pd.isna(a):
+                ref_pos = window_bias.values.argmax()
+                ref_idx = window_start + ref_pos
+                ref_bias = bias.iloc[ref_idx]
+                ref_close = close.iloc[ref_idx]
+
+                if not pd.isna(ref_bias) and ref_bias > REF_BIAS_THRESHOLD:
+                    made_new_high = h > ref_close
+                    bias_shrunk = b < ref_bias
+                    atr_ok = a > ATR_THRESHOLD
+
+                    if made_new_high and bias_shrunk and atr_ok:
+                        in_short = True
+                        entry_price = c
+                        entry_date = d
+                        lookback_start = max(0, i - (SHORT_STOP_LOOKBACK_DAYS - 1))
+                        stop_loss_level = high.iloc[lookback_start:i + 1].max()
+
+        i += 1
+
+    return trades
+
+
+def _close_trade(trades, ticker, entry_date, entry_price, exit_date, exit_price, reason):
+    ret_pct = (entry_price - exit_price) / entry_price * 100.0
+    holding_days = (exit_date - entry_date).days
+    trades.append({
+        "ticker": ticker,
+        "entry_date": entry_date.strftime("%Y-%m-%d"),
+        "exit_date": exit_date.strftime("%Y-%m-%d"),
+        "entry_price": round(float(entry_price), 2),
+        "exit_price": round(float(exit_price), 2),
+        "return_pct": round(float(ret_pct), 2),
+        "holding_days": holding_days,
+        "exit_reason": reason,
+    })
+
+
+def run_backtest_v9(max_stocks: int | None = None):
+    print("抓取股票清單...")
+    universe = get_universe(include_otc=True)
+    if max_stocks:
+        universe = universe[:max_stocks]
+    print(f"共 {len(universe)} 檔,開始回測(v9:v7進場訊號 + v4停損回補邏輯)...")
+
+    all_tickers = [row["ticker"] for row in universe]
+    batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
+
+    all_trades = []
+    done = 0
+    for batch_idx, batch in enumerate(batches, 1):
+        print(f"批次 {batch_idx}/{len(batches)}(已處理 {done}/{len(all_tickers)} 檔)")
+        batch_data = _fetch_batch(batch)
+        for t in batch:
+            done += 1
+            df = batch_data.get(t)
+            if df is None:
+                continue
+            try:
+                trades = simulate_trades_v9(df, t)
+                all_trades.extend(trades)
+            except Exception as e:
+                print(f"[warn] {t} 回測失敗: {e}")
+        time.sleep(BATCH_SLEEP)
+
+    print(f"\n產生 {len(all_trades)} 筆交易。")
+    return all_trades
+
+
+def _stats_for(trades: list[dict], label: str):
+    if not trades:
+        print(f"\n【{label}】沒有交易紀錄。")
+        return
+
+    total = len(trades)
+    wins = [t for t in trades if t["return_pct"] > 0]
+    losses = [t for t in trades if t["return_pct"] <= 0]
+    win_rate = len(wins) / total * 100
+    avg_return = sum(t["return_pct"] for t in trades) / total
+    avg_win = sum(t["return_pct"] for t in wins) / len(wins) if wins else 0
+    avg_loss = sum(t["return_pct"] for t in losses) / len(losses) if losses else 0
+    avg_holding = sum(t["holding_days"] for t in trades) / total
+    expectancy = (len(wins) / total) * avg_win + (len(losses) / total) * avg_loss
+
+    print(f"\n【{label}】")
+    print(f"  總交易筆數: {total}")
+    print(f"  勝率: {win_rate:.1f}%({len(wins)}勝 / {len(losses)}敗)")
+    print(f"  平均報酬率: {avg_return:.2f}%")
+    print(f"  平均獲利: +{avg_win:.2f}%  平均虧損: {avg_loss:.2f}%")
+    print(f"  期望值: {expectancy:.2f}%")
+    print(f"  平均持有天數: {avg_holding:.1f} 天")
+
+
+def print_stats_v9(trades: list[dict]):
+    print("\n" + "=" * 60)
+    print("回測結果統計 v9(v7進場訊號 + v4停損回補邏輯)")
+    print("=" * 60)
+
+    print("\n【與前次放空版本對照】")
+    print("  v4放空(反手,碰均線回補):        536筆, 勝率55.6%, 期望值+0.45%")
+    print("  v7背離訊號(第三次調整,兩階段停利): 5063筆, 勝率41.1%, 期望值-0.51%")
+
+    _stats_for(trades, "v9 全部交易")
+
+    print(f"\n--- 出場原因分布 ---")
+    reason_counts = {}
+    for t in trades:
+        r = t.get("exit_reason", "未知")
+        reason_counts[r] = reason_counts.get(r, 0) + 1
+    for reason, count in sorted(reason_counts.items(), key=lambda x: -x[1]):
+        pct = count / len(trades) * 100 if trades else 0
+        avg_ret = sum(t["return_pct"] for t in trades if t.get("exit_reason") == reason) / count
+        print(f"  {reason}: {count}筆({pct:.1f}%), 平均報酬 {avg_ret:+.2f}%")
+
+    print("\n" + "=" * 60)
+    print(f"\n報酬率最好的10筆交易:")
+    for t in sorted(trades, key=lambda x: x["return_pct"], reverse=True)[:10]:
+        print(f"  {t['ticker']}: {t['entry_date']}進場 → {t['exit_date']}出場, "
+              f"報酬 {t['return_pct']:+.2f}%, 持有{t['holding_days']}天, "
+              f"出場原因={t.get('exit_reason')}")
+
+    print(f"\n報酬率最差的10筆交易:")
+    for t in sorted(trades, key=lambda x: x["return_pct"])[:10]:
+        print(f"  {t['ticker']}: {t['entry_date']}進場 → {t['exit_date']}出場, "
+              f"報酬 {t['return_pct']:+.2f}%, 持有{t['holding_days']}天, "
+              f"出場原因={t.get('exit_reason')}")
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max-stocks", type=int, default=None)
+    args = parser.parse_args()
+
+    trades = run_backtest_v9(max_stocks=args.max_stocks)
+    print_stats_v9(trades)
