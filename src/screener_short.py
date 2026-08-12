@@ -22,8 +22,8 @@ import requests
 
 # ------- 可調參數 -------
 BIAS_MA_PERIOD = 15          # 15MA
-REF_LOOKBACK_DAYS = 20       # 往前找參考日的範圍(交易日)
-REF_BIAS_THRESHOLD = 15.0    # 參考日的乖離率門檻(%)
+REF_LOOKBACK_DAYS = 40       # 往前找參考日的範圍(交易日)——放寬到40天,涵蓋較長的背離間隔
+REF_BIAS_THRESHOLD = 20.0    # 參考日的乖離率門檻(%)
 
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 10.0     # 訊號日ATR14「絕對值」門檻
