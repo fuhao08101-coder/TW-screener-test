@@ -28,7 +28,7 @@ REF_BIAS_THRESHOLD = 15.0    # 參考日的乖離率門檻(%)
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 10.0     # 訊號日ATR14「絕對值」門檻
 
-REQUIRE_PUT_WARRANT = True   # 是否要求「該股票目前有認售權證可買」才納入結果
+REQUIRE_PUT_WARRANT = False  # 認售權證檢查(TWSE API不穩定,關閉,改手動判斷)
 
 HISTORY_PERIOD = "2y"        # 抓多久的歷史資料(要夠算lookback+15MA+ATR14)
 BATCH_SIZE = 150
@@ -102,6 +102,7 @@ def fetch_put_warrant_underlyings() -> set[str]:
 
 
 
+def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     high = df["High"]
     low = df["Low"]
     prev_close = df["Close"].shift(1)
