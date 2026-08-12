@@ -1,6 +1,8 @@
 name: Daily TW Stock Short Screener
 on:
-  workflow_dispatch: {}   # 測試版:只允許手動在 GitHub 網頁上按「Run workflow」執行
+  workflow_dispatch: {}
+  schedule:
+    - cron: "30 9 * * 1-5"   # 台北時間 17:30(UTC 09:30),週一到週五(台股交易日)
 permissions:
   contents: write
 jobs:
