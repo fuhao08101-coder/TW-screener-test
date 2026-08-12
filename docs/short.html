@@ -159,9 +159,9 @@ function renderDay(idx){
           </div>
           <div class="meta">
             <span>收盤 <b>${r.close}</b></span>
-            <span>訊號高 <b>${r.signal_high}</b></span>
-            <span>參考收盤 <b>${r.ref_close}</b></span>
-            <span>ATR14 <b>${r.atr14}</b></span>
+            ${r.revenue_month ? `<span style="color:var(--muted);font-size:10.5px;">(${r.revenue_month.toString().slice(-2)}月營收)</span>` : ''}
+            ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>營收MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
+            ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>營收YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
             <span>${r.market}</span>
           </div>
         </div>
