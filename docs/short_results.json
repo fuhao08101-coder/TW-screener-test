@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-12 07:21:55",
+  "generated_at": "2026-08-12 07:45:31",
   "history": [
     {
       "date": "2026-08-12",
-      "generated_at": "2026-08-12 07:21:55",
+      "generated_at": "2026-08-12 07:45:31",
       "params": {
         "bias_ma": 15,
         "ref_lookback_days": 40,
@@ -24,7 +24,10 @@
           "ref_bias_pct": 24.36,
           "atr14": 27.05,
           "as_of": "2026-08-12",
-          "market": "TPEX"
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "revenue_mom_pct": 12.68,
+          "revenue_yoy_pct": 30.96
         },
         {
           "ticker": "1303.TW",
@@ -37,7 +40,10 @@
           "ref_bias_pct": 36.5,
           "atr14": 14.9,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6949.TW",
@@ -50,7 +56,10 @@
           "ref_bias_pct": 27.83,
           "atr14": 63.0,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "3163.TWO",
@@ -63,7 +72,10 @@
           "ref_bias_pct": 21.99,
           "atr14": 59.65,
           "as_of": "2026-08-12",
-          "market": "TPEX"
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "revenue_mom_pct": 15.94,
+          "revenue_yoy_pct": 28.65
         },
         {
           "ticker": "4967.TW",
@@ -76,7 +88,10 @@
           "ref_bias_pct": 22.61,
           "atr14": 13.0,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "2408.TW",
@@ -89,7 +104,10 @@
           "ref_bias_pct": 27.76,
           "atr14": 34.82,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6538.TWO",
@@ -102,7 +120,10 @@
           "ref_bias_pct": 22.29,
           "atr14": 11.81,
           "as_of": "2026-08-12",
-          "market": "TPEX"
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "revenue_mom_pct": 15.92,
+          "revenue_yoy_pct": 63.37
         },
         {
           "ticker": "3653.TW",
@@ -115,7 +136,10 @@
           "ref_bias_pct": 23.61,
           "atr14": 290.57,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6446.TW",
@@ -128,7 +152,10 @@
           "ref_bias_pct": 24.21,
           "atr14": 93.64,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6805.TW",
@@ -141,7 +168,10 @@
           "ref_bias_pct": 23.45,
           "atr14": 121.25,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "8046.TW",
@@ -154,7 +184,10 @@
           "ref_bias_pct": 26.51,
           "atr14": 100.21,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "6274.TWO",
@@ -167,7 +200,10 @@
           "ref_bias_pct": 23.69,
           "atr14": 119.29,
           "as_of": "2026-08-12",
-          "market": "TPEX"
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "revenue_mom_pct": 20.69,
+          "revenue_yoy_pct": 121.52
         },
         {
           "ticker": "3006.TW",
@@ -180,7 +216,10 @@
           "ref_bias_pct": 29.18,
           "atr14": 16.86,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "4979.TWO",
@@ -193,7 +232,10 @@
           "ref_bias_pct": 25.53,
           "atr14": 38.77,
           "as_of": "2026-08-12",
-          "market": "TPEX"
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "revenue_mom_pct": 11.8,
+          "revenue_yoy_pct": 31.01
         },
         {
           "ticker": "6426.TW",
@@ -206,7 +248,10 @@
           "ref_bias_pct": 28.8,
           "atr14": 15.31,
           "as_of": "2026-08-12",
-          "market": "TWSE"
+          "market": "TWSE",
+          "revenue_month": null,
+          "revenue_mom_pct": null,
+          "revenue_yoy_pct": null
         },
         {
           "ticker": "3081.TWO",
@@ -219,7 +264,10 @@
           "ref_bias_pct": 36.26,
           "atr14": 182.63,
           "as_of": "2026-08-12",
-          "market": "TPEX"
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "revenue_mom_pct": 19.19,
+          "revenue_yoy_pct": 176.54
         }
       ]
     }
