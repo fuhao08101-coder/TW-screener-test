@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-12 08:18:36",
+  "generated_at": "2026-08-12 12:12:46",
   "history": [
     {
       "date": "2026-08-12",
-      "generated_at": "2026-08-12 08:18:36",
+      "generated_at": "2026-08-12 12:12:46",
       "params": {
         "bias_ma": 15,
         "ref_lookback_days": 40,
