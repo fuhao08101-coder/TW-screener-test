@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-12 07:45:31",
+  "generated_at": "2026-08-12 08:18:36",
   "history": [
     {
       "date": "2026-08-12",
-      "generated_at": "2026-08-12 07:45:31",
+      "generated_at": "2026-08-12 08:18:36",
       "params": {
         "bias_ma": 15,
         "ref_lookback_days": 40,
@@ -26,8 +26,8 @@
           "as_of": "2026-08-12",
           "market": "TPEX",
           "revenue_month": "11507",
-          "revenue_mom_pct": 12.68,
-          "revenue_yoy_pct": 30.96
+          "revenue_mom_pct": 12.681575799142939,
+          "revenue_yoy_pct": 30.964326462310794
         },
         {
           "ticker": "1303.TW",
@@ -41,9 +41,9 @@
           "atr14": 14.9,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 12.67014075612414,
+          "revenue_yoy_pct": 44.53141597903039
         },
         {
           "ticker": "6949.TW",
@@ -57,9 +57,9 @@
           "atr14": 63.0,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": -23.053435114503817,
+          "revenue_yoy_pct": -22.604422604422606
         },
         {
           "ticker": "3163.TWO",
@@ -74,8 +74,8 @@
           "as_of": "2026-08-12",
           "market": "TPEX",
           "revenue_month": "11507",
-          "revenue_mom_pct": 15.94,
-          "revenue_yoy_pct": 28.65
+          "revenue_mom_pct": 15.937037772920943,
+          "revenue_yoy_pct": 28.652621264086232
         },
         {
           "ticker": "4967.TW",
@@ -89,9 +89,9 @@
           "atr14": 13.0,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": -15.67575018281787,
+          "revenue_yoy_pct": 98.74936839745938
         },
         {
           "ticker": "2408.TW",
@@ -105,9 +105,9 @@
           "atr14": 34.82,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 49.268911661436526,
+          "revenue_yoy_pct": 719.6141344528174
         },
         {
           "ticker": "6538.TWO",
@@ -122,8 +122,8 @@
           "as_of": "2026-08-12",
           "market": "TPEX",
           "revenue_month": "11507",
-          "revenue_mom_pct": 15.92,
-          "revenue_yoy_pct": 63.37
+          "revenue_mom_pct": 15.92480648728345,
+          "revenue_yoy_pct": 63.36851728723404
         },
         {
           "ticker": "3653.TW",
@@ -137,9 +137,9 @@
           "atr14": 290.57,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 21.255487905663497,
+          "revenue_yoy_pct": 90.95964446430736
         },
         {
           "ticker": "6446.TW",
@@ -153,9 +153,9 @@
           "atr14": 93.64,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 7.479549262881831,
+          "revenue_yoy_pct": 92.58697116592172
         },
         {
           "ticker": "6805.TW",
@@ -169,9 +169,9 @@
           "atr14": 121.25,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 12.74630495930046,
+          "revenue_yoy_pct": 17.065468038937038
         },
         {
           "ticker": "8046.TW",
@@ -185,9 +185,9 @@
           "atr14": 100.21,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 16.126529060393043,
+          "revenue_yoy_pct": 50.241184043103516
         },
         {
           "ticker": "6274.TWO",
@@ -202,8 +202,8 @@
           "as_of": "2026-08-12",
           "market": "TPEX",
           "revenue_month": "11507",
-          "revenue_mom_pct": 20.69,
-          "revenue_yoy_pct": 121.52
+          "revenue_mom_pct": 20.690649104504168,
+          "revenue_yoy_pct": 121.52234336807982
         },
         {
           "ticker": "3006.TW",
@@ -217,9 +217,9 @@
           "atr14": 16.86,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 40.02046030949675,
+          "revenue_yoy_pct": 491.0617601014743
         },
         {
           "ticker": "4979.TWO",
@@ -234,8 +234,8 @@
           "as_of": "2026-08-12",
           "market": "TPEX",
           "revenue_month": "11507",
-          "revenue_mom_pct": 11.8,
-          "revenue_yoy_pct": 31.01
+          "revenue_mom_pct": 11.79872682565598,
+          "revenue_yoy_pct": 31.011263151931526
         },
         {
           "ticker": "6426.TW",
@@ -249,9 +249,9 @@
           "atr14": 15.31,
           "as_of": "2026-08-12",
           "market": "TWSE",
-          "revenue_month": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null
+          "revenue_month": "11507",
+          "revenue_mom_pct": 10.686515678457319,
+          "revenue_yoy_pct": 52.701279450772354
         },
         {
           "ticker": "3081.TWO",
@@ -266,8 +266,8 @@
           "as_of": "2026-08-12",
           "market": "TPEX",
           "revenue_month": "11507",
-          "revenue_mom_pct": 19.19,
-          "revenue_yoy_pct": 176.54
+          "revenue_mom_pct": 19.191832716221132,
+          "revenue_yoy_pct": 176.53575803052206
         }
       ]
     }
