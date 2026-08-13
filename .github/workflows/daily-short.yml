@@ -1,0 +1,32 @@
+name: Daily Short (南下列車)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run short screener
+        run: python src/run_short.py
+
+      - name: Commit results
+        run: |
+          git config user.name "tw-screener-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add docs/short_results.json
+          git diff --staged --quiet || git commit -m "chore: update short results $(date +'%Y-%m-%d %H:%M')"
+          git pull --rebase origin main
+          git push
