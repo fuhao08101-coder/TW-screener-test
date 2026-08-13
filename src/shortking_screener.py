@@ -1,10 +1,13 @@
 """
-短線王(v10-C)篩選器:適合短線/權證操作的進場訊號。
+短線王(v11)篩選器:適合短線/權證操作的進場訊號。
 
 篩選條件(當天同時符合,收盤價直接進場):
   ATR14絕對值 >= 8
-  收盤 > 15MA
-  15MA乖離(收盤相對15MA) >= 13%
+  收盤 > 87MA(結構確認,不是15MA;拿掉了原本的15MA乖離>=13%門檻——
+    很多剛要噴的股票乖離本來就很小甚至是負的,用乖離篩反而會漏掉)
+  外資+融資近9個交易日內同天雙買過,且雙買之後沒有出現過同天雙減
+    (目前僅支援上市TWSE,上櫃TPEX的對應端點格式尚未驗證,不套用此條件,
+    上櫃股票會被排除在結果之外)
 
 這個掃描器只負責「找出符合進場條件的候選股」,不模擬停損停利
 (停損停利是進場後的部位管理邏輯,回測已經驗證過,正式網頁只顯示訊號本身)。
@@ -16,10 +19,14 @@ import time
 import pandas as pd
 import yfinance as yf
 
+from institutional_flow import build_dual_buy_qualified_set
+
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
-BIAS_MA_PERIOD = 15
-BIAS_MIN_THRESHOLD = 13.0
+LONG_MA_PERIOD = 87
+SHORT_MA_PERIOD = 15
+BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點
+REQUIRE_DUAL_BUY = True
 
 HISTORY_PERIOD = "1y"
 BATCH_SIZE = 150
@@ -37,26 +44,32 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
 
 
 def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
-    min_len = max(BIAS_MA_PERIOD, ATR_PERIOD) + 20
+    min_len = max(LONG_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS) + 20
     if df is None or df.empty or len(df) < min_len:
         return None
 
     close = df["Close"].dropna()
+    high = df["High"]
     if len(close) < min_len:
         return None
 
-    ma15 = close.rolling(BIAS_MA_PERIOD).mean()
-    bias = (close - ma15) / ma15 * 100.0
+    ma87 = close.rolling(LONG_MA_PERIOD).mean()
+    ma15 = close.rolling(SHORT_MA_PERIOD).mean()
     atr = _calc_atr(df, ATR_PERIOD)
+    # 近5日高點(不含今天),用來判斷今天有沒有突破
+    recent_high = high.rolling(BREAKOUT_LOOKBACK_DAYS).max().shift(1)
 
     latest_close = close.iloc[-1]
+    latest_ma87 = ma87.iloc[-1]
     latest_ma15 = ma15.iloc[-1]
-    latest_bias = bias.iloc[-1]
     latest_atr = atr.iloc[-1]
+    latest_recent_high = recent_high.iloc[-1]
 
+    if pd.isna(latest_ma87) or latest_close <= latest_ma87:
+        return None
     if pd.isna(latest_ma15) or latest_close <= latest_ma15:
         return None
-    if pd.isna(latest_bias) or latest_bias < BIAS_MIN_THRESHOLD:
+    if pd.isna(latest_recent_high) or latest_close <= latest_recent_high:
         return None
     if pd.isna(latest_atr) or latest_atr < ATR_MIN_THRESHOLD:
         return None
@@ -65,8 +78,9 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         "ticker": ticker,
         "name": name,
         "close": round(float(latest_close), 2),
+        "ma87": round(float(latest_ma87), 2),
         "ma15": round(float(latest_ma15), 2),
-        "bias_pct": round(float(latest_bias), 2),
+        "recent_high": round(float(latest_recent_high), 2),
         "atr14": round(float(latest_atr), 2),
         "signal_low": round(float(df["Low"].iloc[-1]), 2),  # 訊號日最低點(停損參考用)
         "as_of": close.index[-1].strftime("%Y-%m-%d"),
@@ -102,6 +116,11 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
     results = []
     total = len(universe)
     ticker_to_name = {row["ticker"]: row for row in universe}
+
+    dual_buy_qualified: set[str] = set()
+    if REQUIRE_DUAL_BUY:
+        dual_buy_qualified = build_dual_buy_qualified_set()
+
     all_tickers = [row["ticker"] for row in universe]
     batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
 
@@ -115,6 +134,14 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
             row = ticker_to_name.get(t)
             if row is None:
                 continue
+
+            if REQUIRE_DUAL_BUY:
+                if row["market"] != "TWSE":
+                    continue  # 上櫃暫不支援外資融資雙買濾網,先排除
+                code = t.replace(".TWO", "").replace(".TW", "")
+                if code not in dual_buy_qualified:
+                    continue
+
             df = batch_data.get(t)
             try:
                 hit = _evaluate_from_df(df, t, row["name"])
@@ -125,5 +152,5 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
                 print(f"[warn] {t} 判斷失敗: {e}")
         time.sleep(BATCH_SLEEP)
 
-    results.sort(key=lambda r: r["bias_pct"], reverse=True)
+    results.sort(key=lambda r: r["atr14"], reverse=True)
     return results
