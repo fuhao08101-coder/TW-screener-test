@@ -1,27 +1,22 @@
 name: Daily Shortking Scanner
-
 on:
   workflow_dispatch: {}
-
+  schedule:
+    - cron: "30 9 * * 1-5"   # 台北時間 17:30(UTC 09:30),週一到週五
 permissions:
   contents: write
-
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
       - name: Run shortking screener
         run: python src/run_shortking.py
-
       - name: Commit results
         run: |
           git config user.name "tw-screener-bot"
