@@ -113,7 +113,7 @@ def _to_float(s):
         s = str(s).replace(",", "").strip()
         if s == "" or s == "-":
             return None
-        return float(s)
+        return round(float(s), 2)
     except (ValueError, TypeError):
         return None
 
