@@ -1,5 +1,5 @@
 """
-短線王:每日掃描v10-C進場訊號,附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤。
+短線王:每日掃描v11進場訊號,附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤。
 輸出 docs/shortking_results.json
 用法(手動觸發): python src/run_shortking.py
 """
@@ -17,8 +17,10 @@ from shortking_screener import (
     scan_universe,
     ATR_PERIOD,
     ATR_MIN_THRESHOLD,
-    BIAS_MA_PERIOD,
-    BIAS_MIN_THRESHOLD,
+    LONG_MA_PERIOD,
+    SHORT_MA_PERIOD,
+    BREAKOUT_LOOKBACK_DAYS,
+    REQUIRE_DUAL_BUY,
 )
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "shortking_results.json")
@@ -102,8 +104,10 @@ def main():
         "params": {
             "atr_period": ATR_PERIOD,
             "atr_min_threshold": ATR_MIN_THRESHOLD,
-            "bias_ma": BIAS_MA_PERIOD,
-            "bias_min_threshold": BIAS_MIN_THRESHOLD,
+            "long_ma": LONG_MA_PERIOD,
+            "short_ma": SHORT_MA_PERIOD,
+            "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
+            "require_dual_buy": REQUIRE_DUAL_BUY,
         },
         "count": len(results),
         "results": results,
