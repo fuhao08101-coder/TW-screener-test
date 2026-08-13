@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-13 17:28:07",
+  "generated_at": "2026-08-13 18:39:14",
   "history": [
     {
       "date": "2026-08-13",
-      "generated_at": "2026-08-13 17:28:07",
+      "generated_at": "2026-08-13 18:39:14",
       "params": {
         "atr_period": 14,
         "atr_min_threshold": 8.0,
@@ -12,7 +12,7 @@
         "breakout_lookback_days": 5,
         "require_dual_buy": false
       },
-      "count": 47,
+      "count": 46,
       "results": [
         {
           "ticker": "5274.TWO",
@@ -157,24 +157,6 @@
           "revenue_yoy_pct": 175.26,
           "same_group_industry": "其他電子業",
           "has_block_trade": true
-        },
-        {
-          "ticker": "8299.TWO",
-          "name": "群聯",
-          "close": 2280.0,
-          "ma87": 2158.26,
-          "ma15": 1869.0,
-          "recent_high": 2245.0,
-          "atr14": 133.64,
-          "signal_low": 2175.0,
-          "as_of": "2026-08-13",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": 9.29,
-          "revenue_yoy_pct": 377.55,
-          "same_group_industry": "半導體業",
-          "has_block_trade": null
         },
         {
           "ticker": "6187.TWO",
