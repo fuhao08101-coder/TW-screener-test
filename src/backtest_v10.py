@@ -60,6 +60,7 @@ def simulate_trades_v10(df: pd.DataFrame, ticker: str) -> list[dict]:
     signal_low = None       # 訊號當天的最低點(停損用)
     highest_close = None
     days_since_new_high = 0
+    trailing_low_level = None   # 創高那天前一根K棒的低點(動態防守線,取代固定的昨天低點)
 
     i = min_len
     while i < len(dates):
@@ -88,10 +89,12 @@ def simulate_trades_v10(df: pd.DataFrame, ticker: str) -> list[dict]:
                 i += 1
                 continue
 
-            # 停利1:連續3天未創收盤新高
+            # 停利1:連續3天未創收盤新高,同時更新動態防守線
             if c > highest_close:
                 highest_close = c
                 days_since_new_high = 0
+                if i >= 1:
+                    trailing_low_level = low.iloc[i - 1]  # 創高那天前一根K棒的低點
             else:
                 days_since_new_high += 1
 
@@ -102,10 +105,10 @@ def simulate_trades_v10(df: pd.DataFrame, ticker: str) -> list[dict]:
                 i += 1
                 continue
 
-            # 停利2:盤中跌破前一天低點
-            if i >= 1 and l < low.iloc[i - 1]:
+            # 停利2:盤中跌破「創高那天前一根K棒的低點」(動態防守線,還沒創過高就沒有這條線)
+            if trailing_low_level is not None and l < trailing_low_level:
                 _close_trade(trades, ticker, entry_date, entry_price, d, c,
-                             "停利(盤中跌破前一天低點)")
+                             "停利(跌破創高前一根K棒低點)")
                 in_position = False
                 i += 1
                 continue
@@ -123,6 +126,7 @@ def simulate_trades_v10(df: pd.DataFrame, ticker: str) -> list[dict]:
                     signal_low = l
                     highest_close = c
                     days_since_new_high = 0
+                    trailing_low_level = None
 
         i += 1
 
