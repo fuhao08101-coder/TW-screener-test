@@ -35,7 +35,7 @@ BIAS_MA_PERIOD = 15
 BIAS_THRESHOLD_ENTRY = 13.0
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
-STALL_DAYS_LIMIT = 3
+STALL_DAYS_LIMIT = 2
 
 
 def simulate_trades_v10(df: pd.DataFrame, ticker: str) -> list[dict]:
