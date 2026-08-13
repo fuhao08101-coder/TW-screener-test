@@ -62,9 +62,7 @@
   .card{
     background:var(--panel); border:1px solid var(--line);
     border-radius:14px; padding:14px 16px; margin-bottom:10px;
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
   }
-  .left{min-width:0;}
   .ticker-row{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
   .ticker{font-family:var(--mono); font-weight:700; font-size:15px;}
   .name{color:var(--muted); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -73,12 +71,6 @@
     display:flex; gap:14px; flex-wrap:wrap;
   }
   .meta b{color:var(--text); font-weight:600;}
-  .right{text-align:right; flex-shrink:0;}
-  .bias{
-    font-family:var(--mono); font-weight:700; font-size:17px;
-    padding:3px 10px; border-radius:8px; display:inline-block;
-    color:var(--up); background:rgba(224,86,86,.12);
-  }
   footer{
     text-align:center; color:var(--muted); font-family:var(--mono);
     font-size:11px; padding:24px 20px 10px; line-height:1.8;
@@ -100,7 +92,8 @@
 </main>
 
 <footer>
-  條件:ATR14絕對值 &gt; 門檻,收盤 &gt; 15MA,15MA乖離 &gt; 門檻(適合短線/權證操作)<br>
+  條件:ATR14絕對值 &gt; 門檻,收盤 &gt; 87MA,近9個交易日內外資+融資同天雙買過且之後未同天雙減<br>
+  外資融資雙買濾網目前僅支援上市(TWSE),上櫃(TPEX)股票不在此清單中<br>
   僅供研究參考,非投資建議
 </footer>
 
@@ -117,7 +110,10 @@ function renderDay(idx){
   const p = day.params;
   document.getElementById('params').innerHTML = `
     <span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold}</span>
-    <span class="chip">${p.bias_ma}MA 乖離 ≥ ${p.bias_min_threshold}%</span>
+    <span class="chip">收盤 &gt; ${p.long_ma}MA</span>
+    <span class="chip">收盤 &gt; ${p.short_ma}MA</span>
+    <span class="chip">突破近${p.breakout_lookback_days}日高點</span>
+    ${p.require_dual_buy ? `<span class="chip" style="background:#1c3a2c;border-color:#2fae6b;color:#6ee8a8;">外資+融資雙買</span>` : ''}
   `;
 
   document.querySelectorAll('.day-tab').forEach((el, i) => {
@@ -131,25 +127,23 @@ function renderDay(idx){
 
   main.innerHTML = day.results.map(r => `
     <div class="card">
-      <div class="left">
-        <div class="ticker-row">
-          <span class="ticker">${r.ticker.replace('.TWO','').replace('.TW','')}</span>
-          <span class="name">${r.name}</span>
-          ${r.same_group_industry ? `<span class="chip" style="background:#1c3a12;border-color:#4a7a1a;color:#8ce03c;">相同族群 [${r.same_group_industry}]</span>` : ''}
-          ${r.has_block_trade === true ? `<span class="chip" style="background:#3a3212;border:2px solid #e0c83c;color:#f5e050;font-weight:700;">⚠️ 鉅額交易</span>` : ''}
-        </div>
-        <div class="meta">
-          <span>收盤 <b>${r.close}</b></span>
-          <span>15MA <b>${r.ma15}</b></span>
-          <span>ATR14 <b>${r.atr14}</b></span>
-          ${r.revenue_month ? `<span style="color:var(--muted);">(${r.revenue_month.toString().slice(-2)}月營收)</span>` : ''}
-          ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
-          ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
-          <span>${r.market}</span>
-        </div>
+      <div class="ticker-row">
+        <span class="ticker">${r.ticker.replace('.TWO','').replace('.TW','')}</span>
+        <span class="name">${r.name}</span>
+        ${r.same_group_industry ? `<span class="chip" style="background:#1c3a12;border-color:#4a7a1a;color:#8ce03c;">相同族群 [${r.same_group_industry}]</span>` : ''}
+        ${r.has_block_trade === true ? `<span class="chip" style="background:#3a3212;border:2px solid #e0c83c;color:#f5e050;font-weight:700;">⚠️ 鉅額交易</span>` : ''}
       </div>
-      <div class="right">
-        <div class="bias">+${r.bias_pct}%</div>
+      <div class="meta">
+        <span>收盤 <b>${r.close}</b></span>
+        <span>87MA <b>${r.ma87}</b></span>
+        <span>15MA <b>${r.ma15}</b></span>
+        <span>近${'5'}日高 <b>${r.recent_high}</b></span>
+        <span>ATR14 <b>${r.atr14}</b></span>
+        <span>訊號低 <b>${r.signal_low}</b></span>
+        ${r.revenue_month ? `<span style="color:var(--muted);">(${r.revenue_month.toString().slice(-2)}月營收)</span>` : ''}
+        ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
+        ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
+        <span>${r.market}</span>
       </div>
     </div>
   `).join('');
