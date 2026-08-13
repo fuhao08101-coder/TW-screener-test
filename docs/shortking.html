@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>短線王</title>
+<style>
+  :root{
+    --bg:#0b0e11;
+    --panel:#12161c;
+    --line:#232830;
+    --text:#e7e9ec;
+    --muted:#7a8290;
+    --up:#e05656;
+    --down:#2fae6b;
+    --accent:#3b82f6;
+    --mono: "SFMono-Regular","Consolas","Liberation Mono",monospace;
+    --sans: -apple-system,"Segoe UI",Roboto,"PingFang TC","Microsoft JhengHei",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    padding-bottom:40px;
+  }
+  header{
+    position:sticky; top:0; z-index:5;
+    background:linear-gradient(180deg,#0d1116,#0b0e11 90%);
+    border-bottom:1px solid var(--line);
+    padding:16px 18px 12px;
+  }
+  .eyebrow{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em;
+    color:var(--muted); text-transform:uppercase;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--up);
+    box-shadow:0 0 8px var(--up); animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  h1{margin:6px 0 4px; font-size:22px; font-weight:700; letter-spacing:-.01em;}
+  .sub{color:var(--muted); font-size:13px; font-family:var(--mono);}
+  .params{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{
+    font-family:var(--mono); font-size:11px; color:var(--text);
+    background:var(--panel); border:1px solid var(--line);
+    padding:4px 8px; border-radius:20px;
+  }
+  .day-tabs{margin-top:12px; display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;}
+  .day-tab{
+    font-family:var(--mono); font-size:12.5px; white-space:nowrap;
+    background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    padding:6px 12px; border-radius:10px; cursor:pointer; flex-shrink:0;
+  }
+  .day-tab.active{
+    background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;
+  }
+  main{padding:14px;}
+  .empty{
+    text-align:center; color:var(--muted); padding:60px 20px;
+    font-family:var(--mono); font-size:13px; line-height:1.7;
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:14px 16px; margin-bottom:10px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .left{min-width:0;}
+  .ticker-row{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
+  .ticker{font-family:var(--mono); font-weight:700; font-size:15px;}
+  .name{color:var(--muted); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .meta{
+    margin-top:6px; font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    display:flex; gap:14px; flex-wrap:wrap;
+  }
+  .meta b{color:var(--text); font-weight:600;}
+  .right{text-align:right; flex-shrink:0;}
+  .bias{
+    font-family:var(--mono); font-weight:700; font-size:17px;
+    padding:3px 10px; border-radius:8px; display:inline-block;
+    color:var(--up); background:rgba(224,86,86,.12);
+  }
+  footer{
+    text-align:center; color:var(--muted); font-family:var(--mono);
+    font-size:11px; padding:24px 20px 10px; line-height:1.8;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow"><span class="dot"></span><span id="status-text">連線中</span></div>
+  <h1>⚡ 短線王</h1>
+  <div class="sub" id="asof">最後更新:—</div>
+  <div class="params" id="params"></div>
+  <div class="day-tabs" id="day-tabs"></div>
+</header>
+
+<main id="main">
+  <div class="empty">資料載入中…</div>
+</main>
+
+<footer>
+  條件:ATR14絕對值 &gt; 門檻,收盤 &gt; 15MA,15MA乖離 &gt; 門檻(適合短線/權證操作)<br>
+  僅供研究參考,非投資建議
+</footer>
+
+<script>
+let historyData = [];
+
+function renderDay(idx){
+  const main = document.getElementById('main');
+  const day = historyData[idx];
+  if(!day) return;
+
+  document.getElementById('asof').textContent = '更新時間:' + day.generated_at + '(共 ' + day.count + ' 檔)';
+
+  const p = day.params;
+  document.getElementById('params').innerHTML = `
+    <span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold}</span>
+    <span class="chip">${p.bias_ma}MA 乖離 ≥ ${p.bias_min_threshold}%</span>
+  `;
+
+  document.querySelectorAll('.day-tab').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  if(!day.results.length){
+    main.innerHTML = '<div class="empty">這天沒有符合條件的股票。</div>';
+    return;
+  }
+
+  main.innerHTML = day.results.map(r => `
+    <div class="card">
+      <div class="left">
+        <div class="ticker-row">
+          <span class="ticker">${r.ticker.replace('.TWO','').replace('.TW','')}</span>
+          <span class="name">${r.name}</span>
+          ${r.same_group_industry ? `<span class="chip" style="background:#1c3a12;border-color:#4a7a1a;color:#8ce03c;">相同族群 [${r.same_group_industry}]</span>` : ''}
+          ${r.has_block_trade === true ? `<span class="chip" style="background:#3a3212;border:2px solid #e0c83c;color:#f5e050;font-weight:700;">⚠️ 鉅額交易</span>` : ''}
+        </div>
+        <div class="meta">
+          <span>收盤 <b>${r.close}</b></span>
+          <span>15MA <b>${r.ma15}</b></span>
+          <span>ATR14 <b>${r.atr14}</b></span>
+          ${r.revenue_month ? `<span style="color:var(--muted);">(${r.revenue_month.toString().slice(-2)}月營收)</span>` : ''}
+          ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
+          ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
+          <span>${r.market}</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="bias">+${r.bias_pct}%</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function load(){
+  const main = document.getElementById('main');
+  try{
+    const res = await fetch('shortking_results.json?_=' + Date.now());
+    const data = await res.json();
+
+    document.getElementById('status-text').textContent = '已連線';
+    historyData = data.history || [];
+
+    if(!historyData.length){
+      main.innerHTML = '<div class="empty">還沒有掃描結果。<br>請先讓 GitHub Actions 跑過一次。</div>';
+      return;
+    }
+
+    document.getElementById('day-tabs').innerHTML = historyData.map((d, i) =>
+      `<div class="day-tab" data-idx="${i}">${d.date}</div>`
+    ).join('');
+
+    document.querySelectorAll('.day-tab').forEach(el => {
+      el.addEventListener('click', () => renderDay(parseInt(el.dataset.idx)));
+    });
+
+    renderDay(0);
+
+  }catch(e){
+    document.getElementById('status-text').textContent = '尚無資料';
+    main.innerHTML = '<div class="empty">還沒有掃描結果。<br>請先讓 GitHub Actions 跑過一次,<br>或手動觸發 workflow。</div>';
+  }
+}
+load();
+</script>
+
+</body>
+</html>
