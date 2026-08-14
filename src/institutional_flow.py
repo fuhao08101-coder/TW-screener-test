@@ -52,13 +52,20 @@ def _fetch_t86(date_str: str) -> dict[str, int] | None:
                           params={"date": date_str, "selectType": "ALL", "response": "json"},
                           timeout=30)
         if r.status_code != 200:
+            print(f"[warn] T86({date_str}) HTTP狀態碼異常: {r.status_code}")
             return None
         payload = r.json()
-        if payload.get("stat") != "OK":
+        stat = payload.get("stat")
+        if stat != "OK":
+            print(f"[info] T86({date_str}) 非交易日或無資料,stat={stat}")
             return None
-        fields = payload["fields"]
+        fields = payload.get("fields")
+        rows = payload.get("data")
+        if not fields or not rows:
+            print(f"[warn] T86({date_str}) 回傳格式異常,fields或data是空的")
+            return None
         out = {}
-        for row in payload["data"]:
+        for row in rows:
             d = dict(zip(fields, row))
             code = (d.get("證券代號") or "").strip()
             if not code:
@@ -68,6 +75,7 @@ def _fetch_t86(date_str: str) -> dict[str, int] | None:
                 + _to_int(d.get("外資自營商買賣超股數"))
             )
             out[code] = foreign
+        print(f"[info] T86({date_str}) 成功取得 {len(out)} 檔股票外資資料")
         return out
     except Exception as e:
         print(f"[warn] T86({date_str}) 查詢失敗: {e}")
@@ -81,13 +89,20 @@ def _fetch_margin(date_str: str) -> dict[str, int] | None:
                           params={"date": date_str, "selectType": "ALL", "response": "json"},
                           timeout=30)
         if r.status_code != 200:
+            print(f"[warn] MI_MARGN({date_str}) HTTP狀態碼異常: {r.status_code}")
             return None
         payload = r.json()
-        if payload.get("stat") != "OK":
+        stat = payload.get("stat")
+        if stat != "OK":
+            print(f"[info] MI_MARGN({date_str}) 非交易日或無資料,stat={stat}")
             return None
-        fields = payload["fields"]
+        fields = payload.get("fields")
+        rows = payload.get("data")
+        if not fields or not rows:
+            print(f"[warn] MI_MARGN({date_str}) 回傳格式異常,fields或data是空的")
+            return None
         out = {}
-        for row in payload["data"]:
+        for row in rows:
             d = dict(zip(fields, row))
             code = (d.get("股票代號") or "").strip()
             if not code:
@@ -95,6 +110,7 @@ def _fetch_margin(date_str: str) -> dict[str, int] | None:
             today_bal = _to_int(d.get("融資今日餘額"))
             prev_bal = _to_int(d.get("融資前日餘額"))
             out[code] = today_bal - prev_bal
+        print(f"[info] MI_MARGN({date_str}) 成功取得 {len(out)} 檔股票融資資料")
         return out
     except Exception as e:
         print(f"[warn] MI_MARGN({date_str}) 查詢失敗: {e}")
