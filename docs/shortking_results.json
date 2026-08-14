@@ -1,6 +1,20 @@
 {
-  "generated_at": "2026-08-13 20:13:33",
+  "generated_at": "2026-08-14 16:10:15",
   "history": [
+    {
+      "date": "2026-08-14",
+      "generated_at": "2026-08-14 16:10:15",
+      "params": {
+        "atr_period": 14,
+        "atr_min_threshold": 8.0,
+        "long_ma": 87,
+        "short_ma": 15,
+        "breakout_lookback_days": 5,
+        "require_dual_buy": true
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-08-13",
       "generated_at": "2026-08-13 20:13:33",
