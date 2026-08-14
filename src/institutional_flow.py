@@ -97,20 +97,37 @@ def _fetch_margin(date_str: str) -> dict[str, int] | None:
             print(f"[info] MI_MARGN({date_str}) 非交易日或無資料,stat={stat}")
             return None
 
-        tables = payload.get("tables")
-        if not tables:
-            print(f"[warn] MI_MARGN({date_str}) tables是空的,頂層keys: {list(payload.keys())}")
+        tables = payload.get("tables") or []
+        target_table = None
+        for tbl in tables:
+            tbl_fields = tbl.get("fields") or []
+            # 找「代號」開頭、有夠多欄位的那個子表(融資融券彙總),
+            # 不能只看第一個子表,因為子表0是另一種「信用交易統計」彙總表
+            if tbl_fields and tbl_fields[0] == "代號" and len(tbl_fields) >= 13:
+                target_table = tbl
+                break
+
+        if target_table is None:
+            print(f"[warn] MI_MARGN({date_str}) 找不到「代號」開頭的融資融券彙總子表")
             return None
 
-        print(f"[debug] MI_MARGN({date_str}) tables共有 {len(tables)} 個子表")
-        for idx, tbl in enumerate(tables):
-            tbl_fields = tbl.get("fields")
-            tbl_data = tbl.get("data")
-            print(f"[debug]   子表{idx} keys={list(tbl.keys())}, title={tbl.get('title')}")
-            print(f"[debug]   子表{idx} fields={tbl_fields}")
-            if tbl_data:
-                print(f"[debug]   子表{idx} data筆數={len(tbl_data)}, 第一筆={tbl_data[0]}")
-        return None  # 先印出結構,下一輪再接正式解析邏輯
+        rows = target_table.get("data") or []
+        out = {}
+        for row in rows:
+            if len(row) < 7:
+                continue
+            code = (row[0] or "").strip()
+            if not code:
+                continue
+            # 用「位置」取值,不能用欄位名稱——因為「買進/賣出/前日餘額/今日餘額」
+            # 這幾個名稱在表裡重複出現兩次(前段是融資、後段是融券),用名稱對應會抓錯組
+            # 位置:0=代號 1=名稱 2=買進 3=賣出 4=現金償還 5=前日餘額 6=今日餘額(以上都是融資)
+            prev_bal = _to_int(row[5])
+            today_bal = _to_int(row[6])
+            out[code] = today_bal - prev_bal
+
+        print(f"[info] MI_MARGN({date_str}) 成功取得 {len(out)} 檔股票融資資料")
+        return out
         out = {}
         for row in rows:
             d = dict(zip(fields, row))
