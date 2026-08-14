@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-14 16:38:50",
+  "generated_at": "2026-08-14 20:02:35",
   "history": [
     {
       "date": "2026-08-14",
-      "generated_at": "2026-08-14 16:38:50",
+      "generated_at": "2026-08-14 20:02:35",
       "params": {
         "atr_period": 14,
         "atr_min_threshold": 8.0,
