@@ -26,7 +26,7 @@ ATR_MIN_THRESHOLD = 8.0
 LONG_MA_PERIOD = 87
 SHORT_MA_PERIOD = 15
 BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點
-REQUIRE_DUAL_BUY = False  # 外資融資雙買濾網(資料源還沒驗證完成,先關閉,改你自己判斷)
+REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,加強log後重新啟用,先看log確認資料抓取正常
 
 HISTORY_PERIOD = "1y"
 BATCH_SIZE = 150
