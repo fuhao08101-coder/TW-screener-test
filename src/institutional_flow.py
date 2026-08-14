@@ -96,15 +96,21 @@ def _fetch_margin(date_str: str) -> dict[str, int] | None:
         if stat != "OK":
             print(f"[info] MI_MARGN({date_str}) 非交易日或無資料,stat={stat}")
             return None
-        fields = payload.get("fields")
-        rows = payload.get("data")
-        if not fields or not rows:
-            print(f"[warn] MI_MARGN({date_str}) 回傳格式異常,實際收到的頂層key有: {list(payload.keys())}")
-            if fields is not None:
-                print(f"[warn]   fields內容: {fields}")
-            if rows is not None:
-                print(f"[warn]   data筆數: {len(rows)}")
+
+        tables = payload.get("tables")
+        if not tables:
+            print(f"[warn] MI_MARGN({date_str}) tables是空的,頂層keys: {list(payload.keys())}")
             return None
+
+        print(f"[debug] MI_MARGN({date_str}) tables共有 {len(tables)} 個子表")
+        for idx, tbl in enumerate(tables):
+            tbl_fields = tbl.get("fields")
+            tbl_data = tbl.get("data")
+            print(f"[debug]   子表{idx} keys={list(tbl.keys())}, title={tbl.get('title')}")
+            print(f"[debug]   子表{idx} fields={tbl_fields}")
+            if tbl_data:
+                print(f"[debug]   子表{idx} data筆數={len(tbl_data)}, 第一筆={tbl_data[0]}")
+        return None  # 先印出結構,下一輪再接正式解析邏輯
         out = {}
         for row in rows:
             d = dict(zip(fields, row))
