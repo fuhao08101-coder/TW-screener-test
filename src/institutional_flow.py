@@ -99,7 +99,11 @@ def _fetch_margin(date_str: str) -> dict[str, int] | None:
         fields = payload.get("fields")
         rows = payload.get("data")
         if not fields or not rows:
-            print(f"[warn] MI_MARGN({date_str}) 回傳格式異常,fields或data是空的")
+            print(f"[warn] MI_MARGN({date_str}) 回傳格式異常,實際收到的頂層key有: {list(payload.keys())}")
+            if fields is not None:
+                print(f"[warn]   fields內容: {fields}")
+            if rows is not None:
+                print(f"[warn]   data筆數: {len(rows)}")
             return None
         out = {}
         for row in rows:
