@@ -17,7 +17,6 @@ from shortking_screener import (
     scan_universe,
     ATR_PERIOD,
     ATR_MIN_THRESHOLD,
-    LONG_MA_PERIOD,
     SHORT_MA_PERIOD,
     BREAKOUT_LOOKBACK_DAYS,
     REQUIRE_DUAL_BUY,
@@ -104,7 +103,6 @@ def main():
         "params": {
             "atr_period": ATR_PERIOD,
             "atr_min_threshold": ATR_MIN_THRESHOLD,
-            "long_ma": LONG_MA_PERIOD,
             "short_ma": SHORT_MA_PERIOD,
             "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
             "require_dual_buy": REQUIRE_DUAL_BUY,
