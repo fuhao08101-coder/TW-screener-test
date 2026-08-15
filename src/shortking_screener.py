@@ -6,8 +6,8 @@
   收盤 > 87MA(結構確認,不是15MA;拿掉了原本的15MA乖離>=13%門檻——
     很多剛要噴的股票乖離本來就很小甚至是負的,用乖離篩反而會漏掉)
   外資+融資近9個交易日內同天雙買過,且雙買之後沒有出現過同天雙減
-    (上市TWSE + 上櫃TPEX 都支援,上櫃端點格式尚未實測驗證過,已加上詳細
-    診斷log,若解析有誤log會顯示真實結構方便校正,不會讓程式當掉)
+    (目前僅支援上市TWSE,上櫃TPEX的對應端點格式尚未驗證,不套用此條件,
+    上櫃股票會被排除在結果之外)
 
 這個掃描器只負責「找出符合進場條件的候選股」,不模擬停損停利
 (停損停利是進場後的部位管理邏輯,回測已經驗證過,正式網頁只顯示訊號本身)。
@@ -26,7 +26,7 @@ ATR_MIN_THRESHOLD = 8.0
 LONG_MA_PERIOD = 87
 SHORT_MA_PERIOD = 15
 BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點
-REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,上市櫃都已支援
+REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,加強log後重新啟用,先看log確認資料抓取正常
 
 HISTORY_PERIOD = "1y"
 BATCH_SIZE = 150
@@ -56,6 +56,7 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
     ma87 = close.rolling(LONG_MA_PERIOD).mean()
     ma15 = close.rolling(SHORT_MA_PERIOD).mean()
     atr = _calc_atr(df, ATR_PERIOD)
+    # 近5日高點(不含今天),用來判斷今天有沒有突破
     recent_high = high.rolling(BREAKOUT_LOOKBACK_DAYS).max().shift(1)
 
     latest_close = close.iloc[-1]
@@ -81,7 +82,7 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         "ma15": round(float(latest_ma15), 2),
         "recent_high": round(float(latest_recent_high), 2),
         "atr14": round(float(latest_atr), 2),
-        "signal_low": round(float(df["Low"].iloc[-1]), 2),
+        "signal_low": round(float(df["Low"].iloc[-1]), 2),  # 訊號日最低點(停損參考用)
         "as_of": close.index[-1].strftime("%Y-%m-%d"),
     }
 
@@ -135,7 +136,6 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
                 continue
 
             if REQUIRE_DUAL_BUY:
-                # 上市櫃都已支援,不再排除上櫃股票
                 code = t.replace(".TWO", "").replace(".TW", "")
                 if code not in dual_buy_qualified:
                     continue
