@@ -3,9 +3,9 @@
 + 外資融資雙買濾網(僅上市TWSE,近9個交易日內雙買、之後未雙減),
 出場沿用v10-C的規則。
 
-因為外資/融資資料源沒辦法抓5年歷史(太慢、風險高),這次回測範圍縮小成
-最近半年(約125個交易日),只回測上市(TWSE)股票——雙買濾網目前只支援上市,
-上櫃排除在這次回測之外。
+回測範圍最近半年(約125個交易日),上市+上櫃都回測——外資融資雙買濾網這次
+已經加入TPEX(上櫃)的資料源,但格式還沒100%驗證過,第一次跑要看log確認
+「TPEX三大法人」「TPEX融資」有沒有正常回報「成功取得」。
 
 【進場】(當天同時符合,收盤價直接進場):
 - ATR14絕對值 >= 8
@@ -148,12 +148,11 @@ def run_backtest_v12(max_stocks: int | None = None):
     print("步驟1/2:抓取外資融資歷史資料、計算每日雙買合格名單(這步會花一些時間)...")
     qualified_dates_by_code = build_qualified_dates_by_code(window=DUAL_BUY_WINDOW)
 
-    print("\n步驟2/2:抓股票清單(僅上市TWSE)...")
+    print("\n步驟2/2:抓股票清單(上市+上櫃)...")
     universe = get_universe(include_otc=True)
-    universe = [row for row in universe if row["market"] == "TWSE"]
     if max_stocks:
         universe = universe[:max_stocks]
-    print(f"共 {len(universe)} 檔上市股票,開始回測(v12:短線王條件+外資融資雙買,半年)...")
+    print(f"共 {len(universe)} 檔,開始回測(v12:短線王條件+外資融資雙買,半年)...")
 
     all_tickers = [row["ticker"] for row in universe]
     batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
@@ -168,7 +167,7 @@ def run_backtest_v12(max_stocks: int | None = None):
             df = batch_data.get(t)
             if df is None:
                 continue
-            code = t.replace(".TW", "")
+            code = t.replace(".TWO", "").replace(".TW", "")
             qualified_dates = qualified_dates_by_code.get(code, set())
             if not qualified_dates:
                 continue  # 這檔股票在整個回測期間從未通過雙買濾網,不用模擬
