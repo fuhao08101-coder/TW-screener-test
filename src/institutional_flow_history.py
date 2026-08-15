@@ -11,7 +11,7 @@ from __future__ import annotations
 import time
 from datetime import date, timedelta
 
-from institutional_flow import _fetch_t86, _fetch_margin
+from institutional_flow import _fetch_t86, _fetch_margin, _fetch_t86_tpex, _fetch_margin_tpex
 
 REQUEST_SLEEP = 0.3
 TRADING_DAYS_NEEDED = 134   # 125個交易日(半年回測範圍)+9天緩衝(給雙買濾網lookback用)
@@ -20,7 +20,7 @@ MAX_CALENDAR_DAYS_TO_SCAN = 230
 
 def fetch_institutional_history(trading_days_needed: int = TRADING_DAYS_NEEDED):
     """
-    往回抓 trading_days_needed 個交易日的外資+融資資料。
+    往回抓 trading_days_needed 個交易日的外資+融資資料,TWSE+TPEX合併在一起。
     回傳 [(date_str, foreign_map, margin_map), ...],由舊到新排列。
     """
     collected = []
@@ -34,6 +34,14 @@ def fetch_institutional_history(trading_days_needed: int = TRADING_DAYS_NEEDED):
             margin_map = _fetch_margin(date_str)
             time.sleep(REQUEST_SLEEP)
             if margin_map is not None:
+                tpex_foreign = _fetch_t86_tpex(d)
+                time.sleep(REQUEST_SLEEP)
+                tpex_margin = _fetch_margin_tpex(d)
+                time.sleep(REQUEST_SLEEP)
+                if tpex_foreign:
+                    foreign_map = {**foreign_map, **tpex_foreign}
+                if tpex_margin:
+                    margin_map = {**margin_map, **tpex_margin}
                 collected.append((date_str, foreign_map, margin_map))
         d -= timedelta(days=1)
         tried += 1
