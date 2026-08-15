@@ -1,13 +1,13 @@
 """
-短線王(v11)篩選器:適合短線/權證操作的進場訊號。
+短線王(v12)篩選器:適合短線/權證操作的進場訊號。
 
 篩選條件(當天同時符合,收盤價直接進場):
-  ATR14絕對值 >= 8
-  收盤 > 87MA(結構確認,不是15MA;拿掉了原本的15MA乖離>=13%門檻——
-    很多剛要噴的股票乖離本來就很小甚至是負的,用乖離篩反而會漏掉)
-  外資+融資近9個交易日內同天雙買過,且雙買之後沒有出現過同天雙減
-    (目前僅支援上市TWSE,上櫃TPEX的對應端點格式尚未驗證,不套用此條件,
-    上櫃股票會被排除在結果之外)
+  ATR14絕對值 >= 8(股票夠活潑)
+  收盤 > 15MA(短期也要在多頭之上)
+  收盤 > 近5個交易日的最高點(代表今天是價格突破,不是盤整)
+  外資 + 融資,近9個交易日內同一天雙買過,且雙買之後沒有出現過同一天雙減
+    (上市TWSE + 上櫃TPEX都已納入)
+不要求站上87MA(拿掉了,跌破87MA也沒關係)。
 
 這個掃描器只負責「找出符合進場條件的候選股」,不模擬停損停利
 (停損停利是進場後的部位管理邏輯,回測已經驗證過,正式網頁只顯示訊號本身)。
@@ -23,10 +23,9 @@ from institutional_flow import build_dual_buy_qualified_set
 
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
-LONG_MA_PERIOD = 87
 SHORT_MA_PERIOD = 15
 BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點
-REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,加強log後重新啟用,先看log確認資料抓取正常
+REQUIRE_DUAL_BUY = True
 
 HISTORY_PERIOD = "1y"
 BATCH_SIZE = 150
@@ -44,7 +43,7 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
 
 
 def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
-    min_len = max(LONG_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS) + 20
+    min_len = max(SHORT_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS) + 20
     if df is None or df.empty or len(df) < min_len:
         return None
 
@@ -53,20 +52,16 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
     if len(close) < min_len:
         return None
 
-    ma87 = close.rolling(LONG_MA_PERIOD).mean()
     ma15 = close.rolling(SHORT_MA_PERIOD).mean()
     atr = _calc_atr(df, ATR_PERIOD)
     # 近5日高點(不含今天),用來判斷今天有沒有突破
     recent_high = high.rolling(BREAKOUT_LOOKBACK_DAYS).max().shift(1)
 
     latest_close = close.iloc[-1]
-    latest_ma87 = ma87.iloc[-1]
     latest_ma15 = ma15.iloc[-1]
     latest_atr = atr.iloc[-1]
     latest_recent_high = recent_high.iloc[-1]
 
-    if pd.isna(latest_ma87) or latest_close <= latest_ma87:
-        return None
     if pd.isna(latest_ma15) or latest_close <= latest_ma15:
         return None
     if pd.isna(latest_recent_high) or latest_close <= latest_recent_high:
@@ -78,7 +73,6 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         "ticker": ticker,
         "name": name,
         "close": round(float(latest_close), 2),
-        "ma87": round(float(latest_ma87), 2),
         "ma15": round(float(latest_ma15), 2),
         "recent_high": round(float(latest_recent_high), 2),
         "atr14": round(float(latest_atr), 2),
