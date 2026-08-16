@@ -1,17 +1,18 @@
 """
 外資+融資歷史資料抓取,專門給回測用(不是即時篩選)。
 
-沿用 institutional_flow.py 裡已經驗證過欄位正確的 _fetch_t86 / _fetch_margin,
-差別是這支會往回抓半年份(約125個交易日+9天緩衝)的歷史,而不是只抓最近9天。
-
-因為 T86、MI_MARGN 都是「一天一次請求,回傳當天全市場資料」的模式,
-抓半年大約要發送 (134+9)*2 ≈ 260多次請求,實際跑起來預期幾分鐘到十幾分鐘量級。
+沿用 institutional_flow.py 裡的低階函式(_fetch_t86_twse / _fetch_margin_twse /
+_fetch_t86_tpex / _fetch_margin_tpex),差別是這支會往回抓半年份(約125個交易日+9天緩衝)
+的歷史,而不是只抓最近9天。上市+上櫃合併在一起。
 """
 from __future__ import annotations
 import time
 from datetime import date, timedelta
 
-from institutional_flow import _fetch_t86, _fetch_margin, _fetch_t86_tpex, _fetch_margin_tpex
+from institutional_flow import (
+    _fetch_t86_twse, _fetch_margin_twse,
+    _fetch_t86_tpex, _fetch_margin_tpex,
+)
 
 REQUEST_SLEEP = 0.3
 TRADING_DAYS_NEEDED = 134   # 125個交易日(半年回測範圍)+9天緩衝(給雙買濾網lookback用)
@@ -20,29 +21,37 @@ MAX_CALENDAR_DAYS_TO_SCAN = 230
 
 def fetch_institutional_history(trading_days_needed: int = TRADING_DAYS_NEEDED):
     """
-    往回抓 trading_days_needed 個交易日的外資+融資資料,TWSE+TPEX合併在一起。
+    往回抓 trading_days_needed 個交易日的外資+融資資料,上市+上櫃合併在一起。
     回傳 [(date_str, foreign_map, margin_map), ...],由舊到新排列。
     """
     collected = []
     d = date.today()
     tried = 0
     while len(collected) < trading_days_needed and tried < MAX_CALENDAR_DAYS_TO_SCAN:
-        date_str = d.strftime("%Y%m%d")
-        foreign_map = _fetch_t86(date_str)
+        date_str_twse = d.strftime("%Y%m%d")
+
+        foreign_twse = _fetch_t86_twse(date_str_twse)
         time.sleep(REQUEST_SLEEP)
-        if foreign_map is not None:
-            margin_map = _fetch_margin(date_str)
-            time.sleep(REQUEST_SLEEP)
-            if margin_map is not None:
-                tpex_foreign = _fetch_t86_tpex(d)
-                time.sleep(REQUEST_SLEEP)
-                tpex_margin = _fetch_margin_tpex(d)
-                time.sleep(REQUEST_SLEEP)
-                if tpex_foreign:
-                    foreign_map = {**foreign_map, **tpex_foreign}
-                if tpex_margin:
-                    margin_map = {**margin_map, **tpex_margin}
-                collected.append((date_str, foreign_map, margin_map))
+        margin_twse = _fetch_margin_twse(date_str_twse) if foreign_twse is not None else None
+        time.sleep(REQUEST_SLEEP)
+
+        foreign_tpex = _fetch_t86_tpex(d)
+        time.sleep(REQUEST_SLEEP)
+        margin_tpex = _fetch_margin_tpex(d) if foreign_tpex is not None else None
+        time.sleep(REQUEST_SLEEP)
+
+        foreign_map = {}
+        margin_map = {}
+        if foreign_twse is not None and margin_twse is not None:
+            foreign_map.update(foreign_twse)
+            margin_map.update(margin_twse)
+        if foreign_tpex is not None and margin_tpex is not None:
+            foreign_map.update(foreign_tpex)
+            margin_map.update(margin_tpex)
+
+        if foreign_map and margin_map:
+            collected.append((date_str_twse, foreign_map, margin_map))
+
         d -= timedelta(days=1)
         tried += 1
         if tried % 20 == 0:
