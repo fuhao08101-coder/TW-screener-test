@@ -46,6 +46,14 @@
     padding:4px 8px; border-radius:20px;
   }
   .day-tabs{margin-top:12px; display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;}
+  .day-tab{
+    font-family:var(--mono); font-size:12.5px; white-space:nowrap;
+    background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    padding:6px 12px; border-radius:10px; cursor:pointer; flex-shrink:0;
+  }
+  .day-tab.active{
+    background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;
+  }
   .industry-summary{
     margin-top:14px; background:var(--panel); border:1px solid var(--line);
     border-radius:12px; padding:10px 12px;
@@ -62,14 +70,6 @@
   .industry-bar-track{flex:2; height:6px; background:#1a1e24; border-radius:3px; overflow:hidden;}
   .industry-bar-fill{height:100%; background:#8ce03c; border-radius:3px;}
   .industry-count{color:#8ce03c; font-weight:700; min-width:32px; text-align:right;}
-  .day-tab{
-    font-family:var(--mono); font-size:12.5px; white-space:nowrap;
-    background:var(--panel); border:1px solid var(--line); color:var(--muted);
-    padding:6px 12px; border-radius:10px; cursor:pointer; flex-shrink:0;
-  }
-  .day-tab.active{
-    background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;
-  }
   main{padding:14px;}
   .empty{
     text-align:center; color:var(--muted); padding:60px 20px;
@@ -90,7 +90,7 @@
   }
   .meta b{color:var(--text); font-weight:600;}
   .right{text-align:right; flex-shrink:0;}
-  .bias{
+  .atr-badge{
     font-family:var(--mono); font-weight:700; font-size:17px;
     padding:3px 10px; border-radius:8px; display:inline-block;
     color:var(--up); background:rgba(224,86,86,.12);
@@ -120,7 +120,8 @@
 </main>
 
 <footer>
-  條件:ATR14絕對值 &gt; 門檻,收盤 &gt; 15MA,15MA乖離 &gt; 門檻(適合短線/權證操作)<br>
+  條件:ATR14絕對值 ≥ 門檻,收盤 &gt; 15MA,收盤創近5日新高,外資+融資近9日內同天雙買過且之後未雙減(上市+上櫃)<br>
+  依 ATR14 由大到小排序<br>
   僅供研究參考,非投資建議
 </footer>
 
@@ -137,23 +138,23 @@ function renderDay(idx){
   const p = day.params;
   document.getElementById('params').innerHTML = `
     <span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold}</span>
-    <span class="chip">${p.bias_ma}MA 乖離 ≥ ${p.bias_min_threshold}%</span>
+    <span class="chip">收盤 &gt; ${p.short_ma}MA</span>
+    <span class="chip">創近${p.breakout_lookback_days}日新高</span>
+    ${p.require_dual_buy ? `<span class="chip">外資+融資雙買</span>` : ''}
   `;
 
   document.querySelectorAll('.day-tab').forEach((el, i) => {
     el.classList.toggle('active', i === idx);
   });
 
-  // 產業分佈總覽:統計今天結果裡每個產業別有幾檔,由多到少排序
+  // 產業分佈總覽
   const industrySummary = document.getElementById('industry-summary');
   const industryList = document.getElementById('industry-list');
   const counts = {};
   day.results.forEach(r => {
-    const ind = r.industry;
-    if(ind) counts[ind] = (counts[ind] || 0) + 1;
+    if(r.industry) counts[r.industry] = (counts[r.industry] || 0) + 1;
   });
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
   if(sorted.length > 0){
     industrySummary.style.display = 'block';
     const maxCount = sorted[0][1];
@@ -175,7 +176,10 @@ function renderDay(idx){
     return;
   }
 
-  main.innerHTML = day.results.map(r => `
+  // 依 ATR14 由大到小排序(保險起見前端也排一次,不完全依賴後端順序)
+  const sortedResults = [...day.results].sort((a, b) => b.atr14 - a.atr14);
+
+  main.innerHTML = sortedResults.map(r => `
     <div class="card">
       <div class="left">
         <div class="ticker-row">
@@ -195,7 +199,7 @@ function renderDay(idx){
         </div>
       </div>
       <div class="right">
-        <div class="bias">+${r.bias_pct}%</div>
+        <div class="atr-badge">ATR ${r.atr14}</div>
       </div>
     </div>
   `).join('');
