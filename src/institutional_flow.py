@@ -5,15 +5,14 @@
   上市(TWSE):
     三大法人買賣超日報 T86:https://www.twse.com.tw/rwd/zh/fund/T86
     融資融券餘額 MI_MARGN:https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN
-    日期格式:YYYYMMDD(西元年)
+    日期格式:YYYYMMDD(西元年),JSON格式回傳
 
   上櫃(TPEX):
     三大法人買賣超:https://www.tpex.org.tw/web/stock/3insti/DAILY_TradE/3itrade_hedge_result.php
     融資融券餘額:https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php
-    日期格式:民國年/月/日(例如 115/08/13)
-    這兩個網址已經在政府資料開放平台(data.gov.tw)正式登記查證過(dataset 11856、11387),
-    信心程度比單純猜測高,但實際JSON欄位結構還沒有機會實測驗證過,這次先用最合理的猜測寫,
-    並加上詳細診斷log,如果解析失敗,log會印出實際結構,方便下一輪校正,不會讓整個掃描程式當掉。
+    日期格式:民國年/月/日(例如 115/08/13),兩個都是CSV格式回傳(不是JSON!)
+    三大法人欄位已實測確認:代號、外資及陸資買賣超股數(直接是加總後的欄位,不用自己加)
+    融資融券欄位已實測確認:代號、前資餘額(前一日餘額)、資餘額(當日餘額,不是「今資餘額」)
 
 判斷規則(上市、上櫃分開抓資料,但套用同一套邏輯,結果合併):
   近 LOOKBACK_TRADING_DAYS 個交易日內,找「外資買超 且 融資增加」同一天發生的日子(觸發日)。
@@ -23,6 +22,8 @@
   兩個條件都通過 → 合格。
 """
 from __future__ import annotations
+import csv
+import io
 import time
 from datetime import date, timedelta
 import requests
@@ -54,7 +55,7 @@ def _to_int(s):
         return 0
 
 
-# ============ 上市 TWSE ============
+# ============ 上市 TWSE(JSON格式) ============
 
 def _fetch_t86_twse(date_str: str) -> dict[str, int] | None:
     """date_str格式:YYYYMMDD。回傳 {股票代號: 外資買賣超股數},查無資料回傳 None"""
@@ -134,7 +135,7 @@ def _fetch_margin_twse(date_str: str) -> dict[str, int] | None:
         return None
 
 
-# ============ 上櫃 TPEX ============
+# ============ 上櫃 TPEX(CSV格式,不是JSON) ============
 
 def _roc_date_slash(d: date) -> str:
     """西元date物件轉民國年/月/日字串,例如 2026/08/13 -> 115/08/13"""
@@ -144,14 +145,9 @@ def _roc_date_slash(d: date) -> str:
 def _fetch_t86_tpex(d: date) -> dict[str, int] | None:
     """
     回傳 {股票代號: 外資買賣超股數}。
-    實測發現這個端點回傳的是CSV格式(不是JSON),欄位依序為:
-    資料日期,代號,名稱,外資及陸資不含外資自營商買進股數,...賣出股數,...買賣超股數,
-    外資自營商買進股數,...賣出股數,...買賣超股數,外資及陸資買進股數,外資及陸資賣出股數,
-    外資及陸資買賣超股數(這欄已經是前兩者加總,直接用這欄即可),投信...,自營商...
+    實測確認這個端點回傳CSV(不是JSON),欄位裡有「代號」跟現成算好的
+    「外資及陸資買賣超股數」(已經是加總後的欄位,直接用不用自己加)。
     """
-    import csv
-    import io
-
     date_str = _roc_date_slash(d)
     try:
         r = requests.get(TPEX_T86_URL, headers=HEADERS,
@@ -200,12 +196,8 @@ def _fetch_t86_tpex(d: date) -> dict[str, int] | None:
 def _fetch_margin_tpex(d: date) -> dict[str, int] | None:
     """
     回傳 {股票代號: 融資當日增減股數}。
-    這個端點的CSV欄位名稱還沒實際驗證過,先試幾組常見的候選名稱,
-    找不到的話會把真實表頭印出來,方便下一輪校正。
+    實測確認欄位:代號、前資餘額(前一日)、資餘額(當日,注意不是「今資餘額」)。
     """
-    import csv
-    import io
-
     date_str = _roc_date_slash(d)
     try:
         r = requests.get(TPEX_MARGIN_URL, headers=HEADERS,
@@ -218,18 +210,6 @@ def _fetch_margin_tpex(d: date) -> dict[str, int] | None:
         text = r.text.strip()
         if not text:
             print(f"[info] TPEX 融資融券({date_str}) 回應是空的(可能非交易日)")
-            return None
-
-        # 有些回應可能還是JSON(格式不一定跟三大法人那個端點一致),兩種都試
-        if text.startswith("{") or text.startswith("["):
-            try:
-                payload = r.json()
-                print(f"[debug] TPEX 融資融券({date_str}) 回應是JSON,頂層: "
-                      f"{list(payload.keys()) if isinstance(payload, dict) else type(payload)}")
-            except Exception:
-                pass
-            # 目前沒有已知的JSON解析規則,先跳過,回報無法解析
-            print(f"[warn] TPEX 融資融券({date_str}) 回應是JSON格式,但尚未支援解析,前300字: {text[:300]!r}")
             return None
 
         reader = csv.reader(io.StringIO(text))
@@ -246,10 +226,11 @@ def _fetch_margin_tpex(d: date) -> dict[str, int] | None:
                 idx_code = header.index(cand)
                 break
 
+        # 實測確認正確名稱:今日餘額欄位就叫「資餘額」(不是「今資餘額」/「資今餘額」)
         idx_today = None
         idx_prev = None
-        today_candidates = ["資今餘額", "融資今餘額", "資今餘額(張)", "今資餘額", "融資今日餘額"]
-        prev_candidates = ["資前餘額", "融資前餘額", "資前餘額(張)", "前資餘額", "融資前日餘額"]
+        today_candidates = ["資餘額", "資今餘額", "今資餘額", "融資今日餘額"]
+        prev_candidates = ["前資餘額", "資前餘額", "融資前日餘額"]
         for cand in today_candidates:
             if cand in header:
                 idx_today = header.index(cand)
@@ -262,9 +243,6 @@ def _fetch_margin_tpex(d: date) -> dict[str, int] | None:
         if idx_code is None or idx_today is None or idx_prev is None:
             print(f"[warn] TPEX 融資融券({date_str}) 找不到預期欄位,實際header: {header}")
             return None
-
-        print(f"[debug] TPEX 融資融券({date_str}) 使用欄位: 代號=header[{idx_code}], "
-              f"今餘額=header[{idx_today}]({header[idx_today]}), 前餘額=header[{idx_prev}]({header[idx_prev]})")
 
         out = {}
         for row in data_rows:
@@ -290,8 +268,6 @@ def _fetch_recent_trading_days_data(n_days: int = LOOKBACK_TRADING_DAYS):
     """
     往回逐日嘗試,湊出 n_days 個有效交易日的 (外資, 融資) 資料,上市櫃合併在一起。
     回傳 [(date_key, foreign_map, margin_map), ...],依日期由舊到新排列。
-    只要上市「或」上櫃任一邊當天有抓到資料,就算這天有效;兩邊的股票代號不會重複
-    (上市櫃代號不會撞號),所以直接合併字典即可。
     """
     collected = []
     d = date.today()
