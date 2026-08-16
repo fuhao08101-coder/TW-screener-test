@@ -141,29 +141,17 @@ def _roc_date_slash(d: date) -> str:
     return f"{d.year - 1911}/{d.month:02d}/{d.day:02d}"
 
 
-def _extract_rows_generic(payload) -> tuple[list, list] | None:
-    """
-    TPEX舊式.php端點的JSON結構可能是好幾種變體,盡量都試著解析出來。
-    回傳 (fields, rows) 或 None。
-    """
-    if not isinstance(payload, dict):
-        return None
-    # 常見鍵名候選
-    for fields_key in ("fields", "Fields"):
-        for data_key in ("data", "aaData", "tables"):
-            if fields_key in payload and data_key in payload:
-                fields = payload.get(fields_key)
-                rows = payload.get(data_key)
-                if fields and rows:
-                    return fields, rows
-    # aaData常常沒有對應的fields,只有資料陣列本身
-    if "aaData" in payload and payload["aaData"]:
-        return None, payload["aaData"]
-    return None
-
-
 def _fetch_t86_tpex(d: date) -> dict[str, int] | None:
-    """回傳 {股票代號: 外資買賣超股數},解析失敗會印出診斷資訊並回傳None(不會讓程式當掉)"""
+    """
+    回傳 {股票代號: 外資買賣超股數}。
+    實測發現這個端點回傳的是CSV格式(不是JSON),欄位依序為:
+    資料日期,代號,名稱,外資及陸資不含外資自營商買進股數,...賣出股數,...買賣超股數,
+    外資自營商買進股數,...賣出股數,...買賣超股數,外資及陸資買進股數,外資及陸資賣出股數,
+    外資及陸資買賣超股數(這欄已經是前兩者加總,直接用這欄即可),投信...,自營商...
+    """
+    import csv
+    import io
+
     date_str = _roc_date_slash(d)
     try:
         r = requests.get(TPEX_T86_URL, headers=HEADERS,
@@ -172,51 +160,35 @@ def _fetch_t86_tpex(d: date) -> dict[str, int] | None:
         if r.status_code != 200:
             print(f"[warn] TPEX 三大法人({date_str}) HTTP狀態碼異常: {r.status_code}")
             return None
-        try:
-            payload = r.json()
-        except Exception:
-            print(f"[warn] TPEX 三大法人({date_str}) 回應不是合法JSON,前300字: {r.text[:300]!r}")
+
+        text = r.text.strip()
+        if not text:
+            print(f"[info] TPEX 三大法人({date_str}) 回應是空的(可能非交易日)")
             return None
 
-        print(f"[debug] TPEX 三大法人({date_str}) 回應頂層欄位: {list(payload.keys()) if isinstance(payload, dict) else type(payload)}")
-
-        extracted = _extract_rows_generic(payload)
-        if extracted is None:
-            print(f"[warn] TPEX 三大法人({date_str}) 無法辨識資料結構,原始內容(前500字): {str(payload)[:500]}")
-            return None
-        fields, rows = extracted
+        reader = csv.reader(io.StringIO(text))
+        rows = list(reader)
         if not rows:
-            print(f"[info] TPEX 三大法人({date_str}) 無資料(可能非交易日)")
             return None
 
-        print(f"[debug] TPEX 三大法人({date_str}) fields={fields}, 第一筆row範例={rows[0]}")
+        header = rows[0]
+        data_rows = rows[1:]
+
+        try:
+            idx_code = header.index("代號")
+            idx_foreign_total = header.index("外資及陸資買賣超股數")
+        except ValueError:
+            print(f"[warn] TPEX 三大法人({date_str}) 找不到預期欄位,實際header: {header}")
+            return None
 
         out = {}
-        for row in rows:
-            if fields:
-                d_row = dict(zip(fields, row))
-                code = (d_row.get("代號") or d_row.get("證券代號") or d_row.get("股票代號") or "").strip()
-                if not code:
-                    continue
-                foreign = (
-                    _to_int(d_row.get("外陸資買賣超股數(不含外資自營商)"))
-                    + _to_int(d_row.get("外資自營商買賣超股數"))
-                )
-                if foreign == 0:
-                    # 欄位名稱可能不同,試著找含「外資」「買賣超」字樣的欄位
-                    for k, v in d_row.items():
-                        if "外資" in str(k) and ("買賣超" in str(k) or "淨買" in str(k)):
-                            foreign = _to_int(v)
-                            break
-                out[code] = foreign
-            else:
-                # 沒有fields,只能用位置猜測(第0欄通常是代號)
-                if len(row) < 2:
-                    continue
-                code = str(row[0]).strip()
-                if not code:
-                    continue
-                out[code] = _to_int(row[-1])  # 猜測最後一欄是買賣超合計,不保證正確
+        for row in data_rows:
+            if len(row) <= max(idx_code, idx_foreign_total):
+                continue
+            code = row[idx_code].strip()
+            if not code:
+                continue
+            out[code] = _to_int(row[idx_foreign_total])
 
         print(f"[info] TPEX 三大法人({date_str}) 成功取得 {len(out)} 檔股票外資資料")
         return out
@@ -226,7 +198,14 @@ def _fetch_t86_tpex(d: date) -> dict[str, int] | None:
 
 
 def _fetch_margin_tpex(d: date) -> dict[str, int] | None:
-    """回傳 {股票代號: 融資當日增減股數},解析失敗會印出診斷資訊並回傳None"""
+    """
+    回傳 {股票代號: 融資當日增減股數}。
+    這個端點的CSV欄位名稱還沒實際驗證過,先試幾組常見的候選名稱,
+    找不到的話會把真實表頭印出來,方便下一輪校正。
+    """
+    import csv
+    import io
+
     date_str = _roc_date_slash(d)
     try:
         r = requests.get(TPEX_MARGIN_URL, headers=HEADERS,
@@ -235,45 +214,68 @@ def _fetch_margin_tpex(d: date) -> dict[str, int] | None:
         if r.status_code != 200:
             print(f"[warn] TPEX 融資融券({date_str}) HTTP狀態碼異常: {r.status_code}")
             return None
-        try:
-            payload = r.json()
-        except Exception:
-            print(f"[warn] TPEX 融資融券({date_str}) 回應不是合法JSON,前300字: {r.text[:300]!r}")
+
+        text = r.text.strip()
+        if not text:
+            print(f"[info] TPEX 融資融券({date_str}) 回應是空的(可能非交易日)")
             return None
 
-        print(f"[debug] TPEX 融資融券({date_str}) 回應頂層欄位: {list(payload.keys()) if isinstance(payload, dict) else type(payload)}")
-
-        extracted = _extract_rows_generic(payload)
-        if extracted is None:
-            print(f"[warn] TPEX 融資融券({date_str}) 無法辨識資料結構,原始內容(前500字): {str(payload)[:500]}")
+        # 有些回應可能還是JSON(格式不一定跟三大法人那個端點一致),兩種都試
+        if text.startswith("{") or text.startswith("["):
+            try:
+                payload = r.json()
+                print(f"[debug] TPEX 融資融券({date_str}) 回應是JSON,頂層: "
+                      f"{list(payload.keys()) if isinstance(payload, dict) else type(payload)}")
+            except Exception:
+                pass
+            # 目前沒有已知的JSON解析規則,先跳過,回報無法解析
+            print(f"[warn] TPEX 融資融券({date_str}) 回應是JSON格式,但尚未支援解析,前300字: {text[:300]!r}")
             return None
-        fields, rows = extracted
+
+        reader = csv.reader(io.StringIO(text))
+        rows = list(reader)
         if not rows:
-            print(f"[info] TPEX 融資融券({date_str}) 無資料(可能非交易日)")
             return None
 
-        print(f"[debug] TPEX 融資融券({date_str}) fields={fields}, 第一筆row範例={rows[0]}")
+        header = rows[0]
+        data_rows = rows[1:]
+
+        idx_code = None
+        for cand in ("代號", "股票代號", "證券代號"):
+            if cand in header:
+                idx_code = header.index(cand)
+                break
+
+        idx_today = None
+        idx_prev = None
+        today_candidates = ["資今餘額", "融資今餘額", "資今餘額(張)", "今資餘額", "融資今日餘額"]
+        prev_candidates = ["資前餘額", "融資前餘額", "資前餘額(張)", "前資餘額", "融資前日餘額"]
+        for cand in today_candidates:
+            if cand in header:
+                idx_today = header.index(cand)
+                break
+        for cand in prev_candidates:
+            if cand in header:
+                idx_prev = header.index(cand)
+                break
+
+        if idx_code is None or idx_today is None or idx_prev is None:
+            print(f"[warn] TPEX 融資融券({date_str}) 找不到預期欄位,實際header: {header}")
+            return None
+
+        print(f"[debug] TPEX 融資融券({date_str}) 使用欄位: 代號=header[{idx_code}], "
+              f"今餘額=header[{idx_today}]({header[idx_today]}), 前餘額=header[{idx_prev}]({header[idx_prev]})")
 
         out = {}
-        for row in rows:
-            if fields:
-                d_row = dict(zip(fields, row))
-                code = (d_row.get("代號") or d_row.get("股票代號") or "").strip()
-                if not code:
-                    continue
-                prev_bal = _to_int(d_row.get("前資餘額") or d_row.get("融資前日餘額"))
-                today_bal = _to_int(d_row.get("今資餘額") or d_row.get("融資今日餘額"))
-                out[code] = today_bal - prev_bal
-            else:
-                # 沒有fields,參考TWSE的位置慣例先猜:0=代號 5=前日餘額 6=今日餘額
-                if len(row) < 7:
-                    continue
-                code = str(row[0]).strip()
-                if not code:
-                    continue
-                prev_bal = _to_int(row[5])
-                today_bal = _to_int(row[6])
-                out[code] = today_bal - prev_bal
+        for row in data_rows:
+            if len(row) <= max(idx_code, idx_today, idx_prev):
+                continue
+            code = row[idx_code].strip()
+            if not code:
+                continue
+            today_bal = _to_int(row[idx_today])
+            prev_bal = _to_int(row[idx_prev])
+            out[code] = today_bal - prev_bal
 
         print(f"[info] TPEX 融資融券({date_str}) 成功取得 {len(out)} 檔股票融資資料")
         return out
