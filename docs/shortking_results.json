@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-16 13:25:14",
+  "generated_at": "2026-08-16 13:40:03",
   "history": [
     {
       "date": "2026-08-16",
-      "generated_at": "2026-08-16 13:25:14",
+      "generated_at": "2026-08-16 13:40:03",
       "params": {
         "atr_period": 14,
         "atr_min_threshold": 8.0,
@@ -11,7 +11,7 @@
         "breakout_lookback_days": 5,
         "require_dual_buy": true
       },
-      "count": 9,
+      "count": 11,
       "results": [
         {
           "ticker": "6669.TW",
@@ -63,6 +63,23 @@
           "revenue_yoy_pct": -22.6,
           "same_group_industry": null,
           "has_block_trade": false
+        },
+        {
+          "ticker": "6584.TWO",
+          "name": "南俊國際",
+          "close": 605.0,
+          "ma15": 502.5,
+          "recent_high": 597.0,
+          "atr14": 39.92,
+          "signal_low": 595.0,
+          "as_of": "2026-08-14",
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "industry": "電子零組件業",
+          "revenue_mom_pct": -2.12,
+          "revenue_yoy_pct": 32.8,
+          "same_group_industry": "電子零組件業",
+          "has_block_trade": null
         },
         {
           "ticker": "2357.TW",
@@ -148,6 +165,23 @@
           "revenue_yoy_pct": 59.67,
           "same_group_industry": "電腦及週邊設備業",
           "has_block_trade": true
+        },
+        {
+          "ticker": "6761.TWO",
+          "name": "穩得",
+          "close": 184.0,
+          "ma15": 155.0,
+          "recent_high": 180.0,
+          "atr14": 10.36,
+          "signal_low": 181.0,
+          "as_of": "2026-08-14",
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "industry": "電子零組件業",
+          "revenue_mom_pct": 16.89,
+          "revenue_yoy_pct": 16.18,
+          "same_group_industry": "電子零組件業",
+          "has_block_trade": null
         },
         {
           "ticker": "6753.TW",
