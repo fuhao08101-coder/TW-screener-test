@@ -1,13 +1,12 @@
 """
-短線王(v12)篩選器:適合短線/權證操作的進場訊號。
+短線王(v11)篩選器:適合短線/權證操作的進場訊號。
 
 篩選條件(當天同時符合,收盤價直接進場):
-  ATR14絕對值 >= 8(股票夠活潑)
-  收盤 > 15MA(短期也要在多頭之上)
-  收盤 > 近5個交易日的最高點(代表今天是價格突破,不是盤整)
-  外資 + 融資,近9個交易日內同一天雙買過,且雙買之後沒有出現過同一天雙減
-    (上市TWSE + 上櫃TPEX都已納入)
-不要求站上87MA(拿掉了,跌破87MA也沒關係)。
+  ATR14絕對值 >= 8
+  收盤 > 15MA
+  盤中最高價 > 近3個交易日最高點(用最高價判斷突破,不用等收盤確認)
+  外資+融資近9個交易日內同天雙買過,且雙買之後沒有出現過同天雙減
+    (上市TWSE + 上櫃TPEX 都支援,已實測確認可正確抓取雙方資料)
 
 這個掃描器只負責「找出符合進場條件的候選股」,不模擬停損停利
 (停損停利是進場後的部位管理邏輯,回測已經驗證過,正式網頁只顯示訊號本身)。
@@ -24,8 +23,8 @@ from institutional_flow import build_dual_buy_qualified_set
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
 SHORT_MA_PERIOD = 15
-BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點
-REQUIRE_DUAL_BUY = True
+BREAKOUT_LOOKBACK_DAYS = 3   # 突破近幾日高點(改成盤中最高價比較,不是收盤)
+REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,上市櫃都已支援
 
 HISTORY_PERIOD = "1y"
 BATCH_SIZE = 150
@@ -54,17 +53,17 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
 
     ma15 = close.rolling(SHORT_MA_PERIOD).mean()
     atr = _calc_atr(df, ATR_PERIOD)
-    # 近5日高點(不含今天),用來判斷今天有沒有突破
     recent_high = high.rolling(BREAKOUT_LOOKBACK_DAYS).max().shift(1)
 
     latest_close = close.iloc[-1]
+    latest_high = high.iloc[-1]
     latest_ma15 = ma15.iloc[-1]
     latest_atr = atr.iloc[-1]
     latest_recent_high = recent_high.iloc[-1]
 
     if pd.isna(latest_ma15) or latest_close <= latest_ma15:
         return None
-    if pd.isna(latest_recent_high) or latest_close <= latest_recent_high:
+    if pd.isna(latest_recent_high) or latest_high <= latest_recent_high:
         return None
     if pd.isna(latest_atr) or latest_atr < ATR_MIN_THRESHOLD:
         return None
@@ -73,10 +72,11 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         "ticker": ticker,
         "name": name,
         "close": round(float(latest_close), 2),
+        "high": round(float(latest_high), 2),
         "ma15": round(float(latest_ma15), 2),
         "recent_high": round(float(latest_recent_high), 2),
         "atr14": round(float(latest_atr), 2),
-        "signal_low": round(float(df["Low"].iloc[-1]), 2),  # 訊號日最低點(停損參考用)
+        "signal_low": round(float(df["Low"].iloc[-1]), 2),
         "as_of": close.index[-1].strftime("%Y-%m-%d"),
     }
 
@@ -130,6 +130,7 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
                 continue
 
             if REQUIRE_DUAL_BUY:
+                # 上市櫃都已支援,不再排除上櫃股票
                 code = t.replace(".TWO", "").replace(".TW", "")
                 if code not in dual_buy_qualified:
                     continue
