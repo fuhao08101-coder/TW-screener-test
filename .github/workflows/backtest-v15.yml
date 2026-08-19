@@ -1,0 +1,40 @@
+name: Backtest Strategy V15 (3y, TWSE only, dual-buy)
+on:
+  workflow_dispatch:
+    inputs:
+      max_stocks:
+        description: "限制測試股票數量(留空=跑全部;先填50可以快速測試流程有沒有跑通)"
+        required: false
+        default: ""
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240  # 保守抓4小時上限(GitHub Actions單一job硬上限是6小時)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 還原外資融資歷史快取(如果之前跑過,這次會大幅加速甚至直接跳過抓取)。
+      # key用run_id確保每次job結束後都會存一份新的快取(累積用),
+      # restore-keys則讓還原階段抓到「最近一次」存過的快取內容當作起點續跑。
+      - name: Restore institutional flow cache
+        uses: actions/cache@v4
+        with:
+          path: data/institutional_flow_cache.json
+          key: institutional-flow-cache-${{ github.run_id }}
+          restore-keys: |
+            institutional-flow-cache-
+
+      - name: Run backtest v15 (3y, TWSE only)
+        run: |
+          if [ -n "${{ github.event.inputs.max_stocks }}" ]; then
+            python src/backtest_v15.py --max-stocks ${{ github.event.inputs.max_stocks }}
+          else
+            python src/backtest_v15.py
+          fi
