@@ -20,7 +20,6 @@ from shortking_screener import (
     SHORT_MA_PERIOD,
     BIAS_MIN_THRESHOLD,
     BREAKOUT_LOOKBACK_DAYS,
-    BREAKOUT_CHECK_WINDOW,
     REQUIRE_DUAL_BUY,
 )
 
@@ -108,7 +107,6 @@ def main():
             "short_ma": SHORT_MA_PERIOD,
             "bias_min_threshold": BIAS_MIN_THRESHOLD,
             "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
-            "breakout_check_window": BREAKOUT_CHECK_WINDOW,
             "require_dual_buy": REQUIRE_DUAL_BUY,
         },
         "count": len(results),
