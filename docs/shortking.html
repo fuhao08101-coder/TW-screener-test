@@ -65,24 +65,16 @@
   .industry-summary-title{
     font-family:var(--mono); font-size:11px; color:var(--muted);
     text-transform:uppercase; letter-spacing:.05em;
-    display:flex; align-items:center; gap:6px;
   }
-  .industry-summary-count{
+  .industry-summary-toggle{
     font-family:var(--mono); font-size:11px; color:var(--muted);
+    transition:transform .2s ease;
   }
-  .industry-chevron{
-    font-size:11px; color:var(--muted); transition:transform .18s ease;
-    display:inline-block;
-  }
-  .industry-summary.collapsed .industry-chevron{ transform:rotate(-90deg); }
+  .industry-summary.collapsed .industry-summary-toggle{ transform:rotate(-90deg); }
   .industry-summary-body{
-    padding:0 12px 10px;
-    display:grid; grid-template-rows:1fr; transition:grid-template-rows .18s ease;
+    padding:0 12px 10px 12px;
   }
-  .industry-summary.collapsed .industry-summary-body{
-    grid-template-rows:0fr; padding-top:0; padding-bottom:0;
-  }
-  .industry-summary-body > div{ overflow:hidden; }
+  .industry-summary.collapsed .industry-summary-body{ display:none; }
   .industry-row{
     display:flex; align-items:center; gap:8px; padding:4px 0;
     font-family:var(--mono); font-size:12.5px;
@@ -111,7 +103,7 @@
   }
   .meta b{color:var(--text); font-weight:600;}
   .right{text-align:right; flex-shrink:0;}
-  .atr-badge{
+  .bias-badge{
     font-family:var(--mono); font-weight:700; font-size:17px;
     padding:3px 10px; border-radius:8px; display:inline-block;
     color:var(--up); background:rgba(224,86,86,.12);
@@ -126,16 +118,18 @@
 
 <header>
   <div class="eyebrow"><span class="dot"></span><span id="status-text">連線中</span></div>
-  <h1>🎣 大撈家</h1>
+  <h1>大撈家</h1>
   <div class="sub" id="asof">最後更新:—</div>
   <div class="params" id="params"></div>
   <div class="day-tabs" id="day-tabs"></div>
   <div class="industry-summary" id="industry-summary" style="display:none;">
-    <div class="industry-summary-header" id="industry-summary-toggle">
-      <span class="industry-summary-title"><span class="industry-chevron">▾</span>今日產業分佈</span>
-      <span class="industry-summary-count" id="industry-summary-count"></span>
+    <div class="industry-summary-header" id="industry-summary-header">
+      <span class="industry-summary-title">今日產業分佈</span>
+      <span class="industry-summary-toggle">▼</span>
     </div>
-    <div class="industry-summary-body"><div id="industry-list"></div></div>
+    <div class="industry-summary-body">
+      <div id="industry-list"></div>
+    </div>
   </div>
 </header>
 
@@ -144,27 +138,13 @@
 </main>
 
 <footer>
-  條件:收盤 &gt; 15MA 且 15MA乖離率 ≥ 門檻,近幾日內盤中曾創近3日新高,ATR14絕對值 ≥ 門檻,外資+融資近9日內同天雙買過且之後未雙減(上市+上櫃)<br>
+  條件:ATR14絕對值 ≥ 門檻,收盤 &gt; 15MA,15MA乖離 ≥ 門檻,近3日內盤中曾突破近3日高點,外資+融資近9日內同天雙買過且之後未雙減(上市+上櫃)<br>
   依 15MA乖離率 由大到小排序<br>
   僅供研究參考,非投資建議
 </footer>
 
 <script>
 let historyData = [];
-let industryCollapsed = true;
-
-function biasPct(r){
-  if(r.bias_pct !== null && r.bias_pct !== undefined) return r.bias_pct;
-  if(r.close !== undefined && r.ma15){
-    return (r.close - r.ma15) / r.ma15 * 100;
-  }
-  return null;
-}
-
-document.getElementById('industry-summary-toggle').addEventListener('click', () => {
-  industryCollapsed = !industryCollapsed;
-  document.getElementById('industry-summary').classList.toggle('collapsed', industryCollapsed);
-});
 
 function renderDay(idx){
   const main = document.getElementById('main');
@@ -175,10 +155,10 @@ function renderDay(idx){
 
   const p = day.params;
   document.getElementById('params').innerHTML = `
-    <span class="chip">乖離率 ≥ ${p.bias_min_threshold ?? 8}%</span>
     <span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold}</span>
     <span class="chip">收盤 &gt; ${p.short_ma}MA</span>
-    <span class="chip">近${p.breakout_recent_window ?? p.breakout_lookback_days}日內曾創${p.breakout_lookback_days}日新高</span>
+    <span class="chip">乖離 ≥ ${p.bias_min_threshold}%</span>
+    <span class="chip">近${p.breakout_check_window}日內曾突破近${p.breakout_lookback_days}日高點</span>
     ${p.require_dual_buy ? `<span class="chip">外資+融資雙買</span>` : ''}
   `;
 
@@ -186,13 +166,9 @@ function renderDay(idx){
     el.classList.toggle('active', i === idx);
   });
 
-  // 依 15MA 乖離率由大到小排序(前端保險再排一次,不完全依賴後端順序)
-  const sortedResults = [...day.results].sort((a, b) => biasPct(b) - biasPct(a));
-
-  // 產業分佈總覽(可收折)
+  // 產業分佈總覽
   const industrySummary = document.getElementById('industry-summary');
   const industryList = document.getElementById('industry-list');
-  const industrySummaryCount = document.getElementById('industry-summary-count');
   const counts = {};
   day.results.forEach(r => {
     if(r.industry) counts[r.industry] = (counts[r.industry] || 0) + 1;
@@ -200,8 +176,6 @@ function renderDay(idx){
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   if(sorted.length > 0){
     industrySummary.style.display = 'block';
-    industrySummary.classList.toggle('collapsed', industryCollapsed);
-    industrySummaryCount.textContent = sorted.length + ' 個族群';
     const maxCount = sorted[0][1];
     industryList.innerHTML = sorted.map(([name, count]) => `
       <div class="industry-row">
@@ -221,10 +195,10 @@ function renderDay(idx){
     return;
   }
 
-  main.innerHTML = sortedResults.map(r => {
-    const bias = biasPct(r);
-    const biasText = bias === null ? '—' : (bias >= 0 ? '+' : '') + bias.toFixed(2) + '%';
-    return `
+  // 依乖離率由大到小排序(保險起見前端也排一次)
+  const sortedResults = [...day.results].sort((a, b) => b.bias_pct - a.bias_pct);
+
+  main.innerHTML = sortedResults.map(r => `
     <div class="card">
       <div class="left">
         <div class="ticker-row">
@@ -241,12 +215,15 @@ function renderDay(idx){
         </div>
       </div>
       <div class="right">
-        <div class="atr-badge">乖離 ${biasText}</div>
+        <div class="bias-badge">+${r.bias_pct}%</div>
       </div>
     </div>
-  `;
-  }).join('');
+  `).join('');
 }
+
+document.getElementById('industry-summary-header').addEventListener('click', () => {
+  document.getElementById('industry-summary').classList.toggle('collapsed');
+});
 
 async function load(){
   const main = document.getElementById('main');
