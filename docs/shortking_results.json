@@ -1,39 +1,19 @@
 {
-  "generated_at": "2026-08-22 07:01:25",
+  "generated_at": "2026-08-22 07:43:42",
   "history": [
     {
       "date": "2026-08-22",
-      "generated_at": "2026-08-22 07:01:25",
+      "generated_at": "2026-08-22 07:43:42",
       "params": {
         "atr_period": 14,
         "atr_min_threshold": 8.0,
         "short_ma": 15,
         "bias_min_threshold": 8.0,
-        "breakout_lookback_days": 3,
-        "breakout_check_window": 3,
+        "breakout_lookback_days": 5,
         "require_dual_buy": true
       },
-      "count": 14,
+      "count": 9,
       "results": [
-        {
-          "ticker": "7792.TWO",
-          "name": "安葆",
-          "close": 295.0,
-          "high": 301.0,
-          "ma15": 238.13,
-          "bias_pct": 23.88,
-          "recent_high": 308.0,
-          "atr14": 14.68,
-          "signal_low": 291.0,
-          "as_of": "2026-08-21",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "其他電子業",
-          "revenue_mom_pct": -17.71,
-          "revenue_yoy_pct": 4.52,
-          "same_group_industry": "其他電子業",
-          "has_block_trade": null
-        },
         {
           "ticker": "7751.TWO",
           "name": "竑騰",
@@ -69,7 +49,7 @@
           "industry": "電子零組件業",
           "revenue_mom_pct": 12.71,
           "revenue_yoy_pct": 96.88,
-          "same_group_industry": "電子零組件業",
+          "same_group_industry": null,
           "has_block_trade": false
         },
         {
@@ -90,25 +70,6 @@
           "revenue_yoy_pct": 39.65,
           "same_group_industry": "半導體業",
           "has_block_trade": null
-        },
-        {
-          "ticker": "3008.TW",
-          "name": "大立光",
-          "close": 5610.0,
-          "high": 5750.0,
-          "ma15": 4748.4,
-          "bias_pct": 18.15,
-          "recent_high": 5720.0,
-          "atr14": 319.81,
-          "signal_low": 5260.0,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "光電業",
-          "revenue_mom_pct": 31.39,
-          "revenue_yoy_pct": -10.66,
-          "same_group_industry": "光電業",
-          "has_block_trade": true
         },
         {
           "ticker": "4931.TWO",
@@ -146,25 +107,6 @@
           "revenue_mom_pct": -23.05,
           "revenue_yoy_pct": -22.6,
           "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6426.TW",
-          "name": "統新",
-          "close": 241.0,
-          "high": 260.5,
-          "ma15": 212.8,
-          "bias_pct": 13.25,
-          "recent_high": 254.0,
-          "atr14": 16.81,
-          "signal_low": 240.0,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "通信網路業",
-          "revenue_mom_pct": 10.69,
-          "revenue_yoy_pct": 52.7,
-          "same_group_industry": "通信網路業",
           "has_block_trade": false
         },
         {
@@ -221,7 +163,7 @@
           "industry": "光電業",
           "revenue_mom_pct": 6.66,
           "revenue_yoy_pct": 12.18,
-          "same_group_industry": "光電業",
+          "same_group_industry": null,
           "has_block_trade": false
         },
         {
@@ -240,46 +182,8 @@
           "industry": "其他電子業",
           "revenue_mom_pct": 16.72,
           "revenue_yoy_pct": 26.15,
-          "same_group_industry": "其他電子業",
+          "same_group_industry": null,
           "has_block_trade": false
-        },
-        {
-          "ticker": "6761.TWO",
-          "name": "穩得",
-          "close": 187.0,
-          "high": 188.0,
-          "ma15": 170.17,
-          "bias_pct": 9.89,
-          "recent_high": 186.0,
-          "atr14": 9.05,
-          "signal_low": 184.0,
-          "as_of": "2026-08-21",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 16.89,
-          "revenue_yoy_pct": 16.18,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": null
-        },
-        {
-          "ticker": "3362.TWO",
-          "name": "先進光",
-          "close": 194.5,
-          "high": 200.0,
-          "ma15": 178.9,
-          "bias_pct": 8.72,
-          "recent_high": 194.5,
-          "atr14": 13.12,
-          "signal_low": 180.0,
-          "as_of": "2026-08-21",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "光電業",
-          "revenue_mom_pct": 58.62,
-          "revenue_yoy_pct": 1.88,
-          "same_group_industry": "光電業",
-          "has_block_trade": null
         }
       ]
     },
