@@ -1,5 +1,5 @@
 """
-大撈家:每日掃描v12進場訊號,附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤。
+短線王:每日掃描v12進場訊號,附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤。
 輸出 docs/shortking_results.json
 用法(手動觸發): python src/run_shortking.py
 """
@@ -18,9 +18,9 @@ from shortking_screener import (
     ATR_PERIOD,
     ATR_MIN_THRESHOLD,
     SHORT_MA_PERIOD,
-    BREAKOUT_LOOKBACK_DAYS,
-    BREAKOUT_RECENT_WINDOW,
     BIAS_MIN_THRESHOLD,
+    BREAKOUT_LOOKBACK_DAYS,
+    BREAKOUT_CHECK_WINDOW,
     REQUIRE_DUAL_BUY,
 )
 
@@ -53,7 +53,7 @@ def main():
         print(f"❌ 股票清單異常過少,放棄這次更新,保留前一天的結果。")
         return
 
-    print("開始掃描大撈家訊號...")
+    print("開始掃描短線王訊號(上市+上櫃)...")
     results = scan_universe(universe)
     print(f"符合條件: {len(results)} 檔")
 
@@ -106,9 +106,9 @@ def main():
             "atr_period": ATR_PERIOD,
             "atr_min_threshold": ATR_MIN_THRESHOLD,
             "short_ma": SHORT_MA_PERIOD,
-            "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
-            "breakout_recent_window": BREAKOUT_RECENT_WINDOW,
             "bias_min_threshold": BIAS_MIN_THRESHOLD,
+            "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
+            "breakout_check_window": BREAKOUT_CHECK_WINDOW,
             "require_dual_buy": REQUIRE_DUAL_BUY,
         },
         "count": len(results),
