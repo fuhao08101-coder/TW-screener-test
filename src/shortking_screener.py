@@ -4,11 +4,12 @@
 篩選條件(當天同時符合,收盤價直接進場):
   ATR14絕對值 >= 8
   收盤 > 15MA
-  15MA乖離 >= 8%(新增)
-  近3個交易日內,曾經有一天盤中最高價突破當時的近3日最高點(不用是「今天」剛好突破,
-    近3天內任何一天有觸發過就算,放寬時間窗)
+  15MA乖離 >= 8%
+  收盤 > 近5個交易日最高點(用收盤價確認突破,不是盤中——經回測驗證,收盤確認版本
+    期望值優於盤中版本,推測是能過濾掉「當天觸價但收盤又拉回」的假突破雜訊)
   外資+融資近9個交易日內同天雙買過,且雙買之後沒有出現過同天雙減
-    (上市TWSE + 上櫃TPEX 都支援,已實測確認可正確抓取雙方資料)
+    (上市TWSE + 上櫃TPEX 都支援,已實測確認可正確抓取雙方資料,回測顯示兩邊表現
+    接近,沒有理由限定單一市場)
 
 排序:依15MA乖離率由大到小排序。
 
@@ -27,9 +28,8 @@ from institutional_flow import build_dual_buy_qualified_set
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
 SHORT_MA_PERIOD = 15
-BIAS_MIN_THRESHOLD = 8.0     # 新增:15MA乖離門檻(%)
-BREAKOUT_LOOKBACK_DAYS = 3   # 突破近幾日高點(盤中最高價比較,不是收盤)
-BREAKOUT_CHECK_WINDOW = 3    # 新增:近幾天內只要有一天觸發過突破就算
+BIAS_MIN_THRESHOLD = 8.0     # 15MA乖離門檻(%)
+BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點(改成收盤價比較,回測驗證優於盤中版本)
 REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,上市櫃都已支援
 
 HISTORY_PERIOD = "1y"
@@ -48,7 +48,7 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
 
 
 def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
-    min_len = max(SHORT_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS, BREAKOUT_CHECK_WINDOW) + 20
+    min_len = max(SHORT_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS) + 20
     if df is None or df.empty or len(df) < min_len:
         return None
 
@@ -75,12 +75,7 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         return None
     if pd.isna(latest_atr) or latest_atr < ATR_MIN_THRESHOLD:
         return None
-
-    # 近BREAKOUT_CHECK_WINDOW天內,只要有任一天「當天盤中最高價 > 當時的近3日高點」就算通過
-    window_high = high.tail(BREAKOUT_CHECK_WINDOW)
-    window_recent_high = recent_high.tail(BREAKOUT_CHECK_WINDOW)
-    breakout_triggered = (window_high > window_recent_high).any()
-    if not breakout_triggered:
+    if pd.isna(latest_recent_high) or latest_close <= latest_recent_high:
         return None
 
     return {
