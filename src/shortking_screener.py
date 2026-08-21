@@ -1,16 +1,16 @@
 """
-大撈家(v12)篩選器:適合短線/權證操作的進場訊號。
+短線王(v12)篩選器:適合短線/權證操作的進場訊號。
 
 篩選條件(當天同時符合,收盤價直接進場):
   ATR14絕對值 >= 8
   收盤 > 15MA
-  15MA乖離率 >= 8%(新增)
-  近3個交易日內,盤中最高價曾經 > 當下的近3個交易日最高點(不用等收盤確認,
-    且不要求一定是「今天」突破,只要近3日內出現過就算,新增/放寬)
+  15MA乖離 >= 8%(新增)
+  近3個交易日內,曾經有一天盤中最高價突破當時的近3日最高點(不用是「今天」剛好突破,
+    近3天內任何一天有觸發過就算,放寬時間窗)
   外資+融資近9個交易日內同天雙買過,且雙買之後沒有出現過同天雙減
     (上市TWSE + 上櫃TPEX 都支援,已實測確認可正確抓取雙方資料)
 
-排序:依 15MA乖離率 由大到小排序(原本是依 ATR14,已改)。
+排序:依15MA乖離率由大到小排序。
 
 這個掃描器只負責「找出符合進場條件的候選股」,不模擬停損停利
 (停損停利是進場後的部位管理邏輯,回測已經驗證過,正式網頁只顯示訊號本身)。
@@ -27,9 +27,9 @@ from institutional_flow import build_dual_buy_qualified_set
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
 SHORT_MA_PERIOD = 15
-BREAKOUT_LOOKBACK_DAYS = 3   # 突破的比較基準:近幾個交易日高點
-BREAKOUT_RECENT_WINDOW = 3   # 只要近幾天「曾經」突破過就算,不要求一定是當天(新增)
-BIAS_MIN_THRESHOLD = 8.0     # 15MA乖離率門檻(%),新增濾網
+BIAS_MIN_THRESHOLD = 8.0     # 新增:15MA乖離門檻(%)
+BREAKOUT_LOOKBACK_DAYS = 3   # 突破近幾日高點(盤中最高價比較,不是收盤)
+BREAKOUT_CHECK_WINDOW = 3    # 新增:近幾天內只要有一天觸發過突破就算
 REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,上市櫃都已支援
 
 HISTORY_PERIOD = "1y"
@@ -48,11 +48,7 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
 
 
 def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
-    min_len = (
-        max(SHORT_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS)
-        + BREAKOUT_RECENT_WINDOW
-        + 20
-    )
+    min_len = max(SHORT_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS, BREAKOUT_CHECK_WINDOW) + 20
     if df is None or df.empty or len(df) < min_len:
         return None
 
@@ -62,37 +58,29 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         return None
 
     ma15 = close.rolling(SHORT_MA_PERIOD).mean()
+    bias = (close - ma15) / ma15 * 100.0
     atr = _calc_atr(df, ATR_PERIOD)
     recent_high = high.rolling(BREAKOUT_LOOKBACK_DAYS).max().shift(1)
 
     latest_close = close.iloc[-1]
     latest_high = high.iloc[-1]
     latest_ma15 = ma15.iloc[-1]
+    latest_bias = bias.iloc[-1]
     latest_atr = atr.iloc[-1]
     latest_recent_high = recent_high.iloc[-1]
 
     if pd.isna(latest_ma15) or latest_close <= latest_ma15:
         return None
+    if pd.isna(latest_bias) or latest_bias < BIAS_MIN_THRESHOLD:
+        return None
     if pd.isna(latest_atr) or latest_atr < ATR_MIN_THRESHOLD:
         return None
 
-    # 15MA 乖離率濾網(新增)
-    bias_pct = (latest_close - latest_ma15) / latest_ma15 * 100
-    if bias_pct < BIAS_MIN_THRESHOLD:
-        return None
-
-    # 近 BREAKOUT_RECENT_WINDOW 個交易日內,是否「曾經」盤中突破當時的近
-    # BREAKOUT_LOOKBACK_DAYS 日高點(不要求一定是今天,新增/放寬)
-    breakout_recent = False
-    for i in range(1, BREAKOUT_RECENT_WINDOW + 1):
-        if i > len(high):
-            break
-        h = high.iloc[-i]
-        rh = recent_high.iloc[-i]
-        if pd.notna(rh) and h > rh:
-            breakout_recent = True
-            break
-    if not breakout_recent:
+    # 近BREAKOUT_CHECK_WINDOW天內,只要有任一天「當天盤中最高價 > 當時的近3日高點」就算通過
+    window_high = high.tail(BREAKOUT_CHECK_WINDOW)
+    window_recent_high = recent_high.tail(BREAKOUT_CHECK_WINDOW)
+    breakout_triggered = (window_high > window_recent_high).any()
+    if not breakout_triggered:
         return None
 
     return {
@@ -101,9 +89,9 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         "close": round(float(latest_close), 2),
         "high": round(float(latest_high), 2),
         "ma15": round(float(latest_ma15), 2),
-        "recent_high": round(float(latest_recent_high), 2) if pd.notna(latest_recent_high) else None,
+        "bias_pct": round(float(latest_bias), 2),
+        "recent_high": round(float(latest_recent_high), 2),
         "atr14": round(float(latest_atr), 2),
-        "bias_pct": round(float(bias_pct), 2),
         "signal_low": round(float(df["Low"].iloc[-1]), 2),
         "as_of": close.index[-1].strftime("%Y-%m-%d"),
     }
@@ -158,7 +146,6 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
                 continue
 
             if REQUIRE_DUAL_BUY:
-                # 上市櫃都已支援,不再排除上櫃股票
                 code = t.replace(".TWO", "").replace(".TW", "")
                 if code not in dual_buy_qualified:
                     continue
@@ -173,6 +160,5 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
                 print(f"[warn] {t} 判斷失敗: {e}")
         time.sleep(BATCH_SLEEP)
 
-    # 依 15MA 乖離率由大到小排序(原本依 ATR14,已改)
-    results.sort(key=lambda r: r["bias_pct"], reverse=True)
+    results.sort(key=lambda r: r["bias_pct"], reverse=True)  # 改成依乖離率排序
     return results
