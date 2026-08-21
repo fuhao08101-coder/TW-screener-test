@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>短線王</title>
+<title>大撈家</title>
 <style>
   :root{
     --bg:#0b0e11;
@@ -56,12 +56,33 @@
   }
   .industry-summary{
     margin-top:14px; background:var(--panel); border:1px solid var(--line);
-    border-radius:12px; padding:10px 12px;
+    border-radius:12px; overflow:hidden;
+  }
+  .industry-summary-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px; cursor:pointer; user-select:none;
   }
   .industry-summary-title{
     font-family:var(--mono); font-size:11px; color:var(--muted);
-    text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;
+    text-transform:uppercase; letter-spacing:.05em;
+    display:flex; align-items:center; gap:6px;
   }
+  .industry-summary-count{
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+  }
+  .industry-chevron{
+    font-size:11px; color:var(--muted); transition:transform .18s ease;
+    display:inline-block;
+  }
+  .industry-summary.collapsed .industry-chevron{ transform:rotate(-90deg); }
+  .industry-summary-body{
+    padding:0 12px 10px;
+    display:grid; grid-template-rows:1fr; transition:grid-template-rows .18s ease;
+  }
+  .industry-summary.collapsed .industry-summary-body{
+    grid-template-rows:0fr; padding-top:0; padding-bottom:0;
+  }
+  .industry-summary-body > div{ overflow:hidden; }
   .industry-row{
     display:flex; align-items:center; gap:8px; padding:4px 0;
     font-family:var(--mono); font-size:12.5px;
@@ -105,13 +126,16 @@
 
 <header>
   <div class="eyebrow"><span class="dot"></span><span id="status-text">連線中</span></div>
-  <h1>⚡ 短線王</h1>
+  <h1>🎣 大撈家</h1>
   <div class="sub" id="asof">最後更新:—</div>
   <div class="params" id="params"></div>
   <div class="day-tabs" id="day-tabs"></div>
   <div class="industry-summary" id="industry-summary" style="display:none;">
-    <div class="industry-summary-title">今日產業分佈</div>
-    <div id="industry-list"></div>
+    <div class="industry-summary-header" id="industry-summary-toggle">
+      <span class="industry-summary-title"><span class="industry-chevron">▾</span>今日產業分佈</span>
+      <span class="industry-summary-count" id="industry-summary-count"></span>
+    </div>
+    <div class="industry-summary-body"><div id="industry-list"></div></div>
   </div>
 </header>
 
@@ -120,13 +144,27 @@
 </main>
 
 <footer>
-  條件:ATR14絕對值 ≥ 門檻,收盤 &gt; 15MA,收盤創近5日新高,外資+融資近9日內同天雙買過且之後未雙減(上市+上櫃)<br>
-  依 ATR14 由大到小排序<br>
+  條件:收盤 &gt; 15MA 且 15MA乖離率 ≥ 門檻,近幾日內盤中曾創近3日新高,ATR14絕對值 ≥ 門檻,外資+融資近9日內同天雙買過且之後未雙減(上市+上櫃)<br>
+  依 15MA乖離率 由大到小排序<br>
   僅供研究參考,非投資建議
 </footer>
 
 <script>
 let historyData = [];
+let industryCollapsed = true;
+
+function biasPct(r){
+  if(r.bias_pct !== null && r.bias_pct !== undefined) return r.bias_pct;
+  if(r.close !== undefined && r.ma15){
+    return (r.close - r.ma15) / r.ma15 * 100;
+  }
+  return null;
+}
+
+document.getElementById('industry-summary-toggle').addEventListener('click', () => {
+  industryCollapsed = !industryCollapsed;
+  document.getElementById('industry-summary').classList.toggle('collapsed', industryCollapsed);
+});
 
 function renderDay(idx){
   const main = document.getElementById('main');
@@ -137,9 +175,10 @@ function renderDay(idx){
 
   const p = day.params;
   document.getElementById('params').innerHTML = `
+    <span class="chip">乖離率 ≥ ${p.bias_min_threshold ?? 8}%</span>
     <span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold}</span>
     <span class="chip">收盤 &gt; ${p.short_ma}MA</span>
-    <span class="chip">創近${p.breakout_lookback_days}日新高</span>
+    <span class="chip">近${p.breakout_recent_window ?? p.breakout_lookback_days}日內曾創${p.breakout_lookback_days}日新高</span>
     ${p.require_dual_buy ? `<span class="chip">外資+融資雙買</span>` : ''}
   `;
 
@@ -147,9 +186,13 @@ function renderDay(idx){
     el.classList.toggle('active', i === idx);
   });
 
-  // 產業分佈總覽
+  // 依 15MA 乖離率由大到小排序(前端保險再排一次,不完全依賴後端順序)
+  const sortedResults = [...day.results].sort((a, b) => biasPct(b) - biasPct(a));
+
+  // 產業分佈總覽(可收折)
   const industrySummary = document.getElementById('industry-summary');
   const industryList = document.getElementById('industry-list');
+  const industrySummaryCount = document.getElementById('industry-summary-count');
   const counts = {};
   day.results.forEach(r => {
     if(r.industry) counts[r.industry] = (counts[r.industry] || 0) + 1;
@@ -157,6 +200,8 @@ function renderDay(idx){
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   if(sorted.length > 0){
     industrySummary.style.display = 'block';
+    industrySummary.classList.toggle('collapsed', industryCollapsed);
+    industrySummaryCount.textContent = sorted.length + ' 個族群';
     const maxCount = sorted[0][1];
     industryList.innerHTML = sorted.map(([name, count]) => `
       <div class="industry-row">
@@ -176,10 +221,10 @@ function renderDay(idx){
     return;
   }
 
-  // 依 ATR14 由大到小排序(保險起見前端也排一次,不完全依賴後端順序)
-  const sortedResults = [...day.results].sort((a, b) => b.atr14 - a.atr14);
-
-  main.innerHTML = sortedResults.map(r => `
+  main.innerHTML = sortedResults.map(r => {
+    const bias = biasPct(r);
+    const biasText = bias === null ? '—' : (bias >= 0 ? '+' : '') + bias.toFixed(2) + '%';
+    return `
     <div class="card">
       <div class="left">
         <div class="ticker-row">
@@ -189,9 +234,6 @@ function renderDay(idx){
           ${r.has_block_trade === true ? `<span class="chip" style="background:#3a3212;border:2px solid #e0c83c;color:#f5e050;font-weight:700;">⚠️ 鉅額交易</span>` : ''}
         </div>
         <div class="meta">
-          <span>收盤 <b>${r.close}</b></span>
-          <span>15MA <b>${r.ma15}</b></span>
-          <span>ATR14 <b>${r.atr14}</b></span>
           ${r.revenue_month ? `<span style="color:var(--muted);">(${r.revenue_month.toString().slice(-2)}月營收)</span>` : ''}
           ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
           ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
@@ -199,10 +241,11 @@ function renderDay(idx){
         </div>
       </div>
       <div class="right">
-        <div class="atr-badge">ATR ${r.atr14}</div>
+        <div class="atr-badge">乖離 ${biasText}</div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function load(){
