@@ -54,6 +54,19 @@
   .day-tab.active{
     background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700;
   }
+  .market-regime{
+    margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .regime-badge{
+    flex:1; min-width:140px; padding:8px 12px; border-radius:10px;
+    font-family:var(--mono); font-size:12px; border:1px solid;
+  }
+  .regime-badge.strong{ background:rgba(47,174,107,.12); border-color:#2fae6b; color:#4fd68a; }
+  .regime-badge.weak{ background:rgba(224,86,86,.12); border-color:#e05656; color:#f08080; }
+  .regime-badge.unknown{ background:var(--panel); border-color:var(--line); color:var(--muted); }
+  .regime-badge-title{ font-weight:700; margin-bottom:2px; }
+  .regime-badge-detail{ color:inherit; opacity:.8; font-size:11px; }
+
   .industry-summary{
     margin-top:14px; background:var(--panel); border:1px solid var(--line);
     border-radius:12px; overflow:hidden;
@@ -121,6 +134,7 @@
   <h1>大撈家</h1>
   <div class="sub" id="asof">最後更新:—</div>
   <div class="params" id="params"></div>
+  <div class="market-regime" id="market-regime"></div>
   <div class="day-tabs" id="day-tabs"></div>
   <div class="industry-summary" id="industry-summary" style="display:none;">
     <div class="industry-summary-header" id="industry-summary-header">
@@ -139,7 +153,7 @@
 
 <footer>
   條件:ATR14絕對值 ≥ 門檻,收盤 &gt; 15MA,15MA乖離 ≥ 門檻,收盤站上近5日高點(上市+上櫃)<br>
-
+  依 15MA乖離率 由大到小排序<br>
   僅供研究參考,非投資建議
 </footer>
 
@@ -159,8 +173,20 @@ function renderDay(idx){
     <span class="chip">收盤 &gt; ${p.short_ma}MA</span>
     <span class="chip">乖離 ≥ ${p.bias_min_threshold}%</span>
     <span class="chip">收盤 &gt; 近${p.breakout_lookback_days}日高點</span>
-
   `;
+
+  // 大盤環境燈號(加權/櫃買 強弱狀態)
+  const regime = day.market_regime || {};
+  function renderRegimeBadge(name, r) {
+    if (!r) {
+      return `<div class="regime-badge unknown"><div class="regime-badge-title">${name}:資料暫缺</div><div class="regime-badge-detail">今日保守放行,未套用濾網</div></div>`;
+    }
+    const cls = r.is_strong ? 'strong' : 'weak';
+    const label = r.is_strong ? '強 ✅ 站上15MA' : '弱 ⚠️ 跌破15MA';
+    return `<div class="regime-badge ${cls}"><div class="regime-badge-title">${name}:${label}</div><div class="regime-badge-detail">收盤 ${r.close} / 15MA ${r.ma15}</div></div>`;
+  }
+  document.getElementById('market-regime').innerHTML =
+    renderRegimeBadge('加權指數', regime.twse) + renderRegimeBadge('櫃買指數', regime.otc);
 
   document.querySelectorAll('.day-tab').forEach((el, i) => {
     el.classList.toggle('active', i === idx);
@@ -228,34 +254,3 @@ document.getElementById('industry-summary-header').addEventListener('click', () 
 async function load(){
   const main = document.getElementById('main');
   try{
-    const res = await fetch('shortking_results.json?_=' + Date.now());
-    const data = await res.json();
-
-    document.getElementById('status-text').textContent = '已連線';
-    historyData = data.history || [];
-
-    if(!historyData.length){
-      main.innerHTML = '<div class="empty">還沒有掃描結果。<br>請先讓 GitHub Actions 跑過一次。</div>';
-      return;
-    }
-
-    document.getElementById('day-tabs').innerHTML = historyData.map((d, i) =>
-      `<div class="day-tab" data-idx="${i}">${d.date}</div>`
-    ).join('');
-
-    document.querySelectorAll('.day-tab').forEach(el => {
-      el.addEventListener('click', () => renderDay(parseInt(el.dataset.idx)));
-    });
-
-    renderDay(0);
-
-  }catch(e){
-    document.getElementById('status-text').textContent = '尚無資料';
-    main.innerHTML = '<div class="empty">還沒有掃描結果。<br>請先讓 GitHub Actions 跑過一次,<br>或手動觸發 workflow。</div>';
-  }
-}
-load();
-</script>
-
-</body>
-</html>
