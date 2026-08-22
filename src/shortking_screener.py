@@ -1,5 +1,5 @@
 """
-短線王(v12)篩選器:適合短線/權證操作的進場訊號。
+短線王(組合C,已驗證版本)篩選器:適合短線/權證操作的進場訊號。
 
 篩選條件(當天同時符合,收盤價直接進場):
   ATR14絕對值 >= 8
@@ -7,9 +7,10 @@
   15MA乖離 >= 8%
   收盤 > 近5個交易日最高點(用收盤價確認突破,不是盤中——經回測驗證,收盤確認版本
     期望值優於盤中版本,推測是能過濾掉「當天觸價但收盤又拉回」的假突破雜訊)
-  外資+融資近9個交易日內同天雙買過,且雙買之後沒有出現過同天雙減
-    (上市TWSE + 上櫃TPEX 都支援,已實測確認可正確抓取雙方資料,回測顯示兩邊表現
-    接近,沒有理由限定單一市場)
+
+【已拿掉外資融資雙買濾網】經全市場1年期回測驗證,加了雙買濾網後期望值反而從
++2.37%掉到+1.32%,勝率也下降,證實這層濾網是扣分項,不是加分項,故移除,
+回到純價格邏輯(組合C)。
 
 排序:依15MA乖離率由大到小排序。
 
@@ -23,14 +24,11 @@ import time
 import pandas as pd
 import yfinance as yf
 
-from institutional_flow import build_dual_buy_qualified_set
-
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
 SHORT_MA_PERIOD = 15
 BIAS_MIN_THRESHOLD = 8.0     # 15MA乖離門檻(%)
-BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點(改成收盤價比較,回測驗證優於盤中版本)
-REQUIRE_DUAL_BUY = True  # 外資融資雙買濾網,上市櫃都已支援
+BREAKOUT_LOOKBACK_DAYS = 5   # 突破近幾日高點(收盤價比較)
 
 HISTORY_PERIOD = "1y"
 BATCH_SIZE = 150
@@ -122,10 +120,6 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
     total = len(universe)
     ticker_to_name = {row["ticker"]: row for row in universe}
 
-    dual_buy_qualified: set[str] = set()
-    if REQUIRE_DUAL_BUY:
-        dual_buy_qualified = build_dual_buy_qualified_set()
-
     all_tickers = [row["ticker"] for row in universe]
     batches = [all_tickers[i:i + BATCH_SIZE] for i in range(0, len(all_tickers), BATCH_SIZE)]
 
@@ -140,11 +134,6 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
             if row is None:
                 continue
 
-            if REQUIRE_DUAL_BUY:
-                code = t.replace(".TWO", "").replace(".TW", "")
-                if code not in dual_buy_qualified:
-                    continue
-
             df = batch_data.get(t)
             try:
                 hit = _evaluate_from_df(df, t, row["name"])
@@ -155,5 +144,5 @@ def scan_universe(universe: list[dict], progress: bool = True) -> list[dict]:
                 print(f"[warn] {t} 判斷失敗: {e}")
         time.sleep(BATCH_SLEEP)
 
-    results.sort(key=lambda r: r["bias_pct"], reverse=True)  # 改成依乖離率排序
+    results.sort(key=lambda r: r["bias_pct"], reverse=True)
     return results
