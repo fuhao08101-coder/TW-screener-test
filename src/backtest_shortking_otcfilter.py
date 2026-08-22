@@ -54,16 +54,32 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(alpha=1 / period, adjust=False).mean()
 
 
-def fetch_index_regime(ticker: str) -> dict:
-    """回傳 {日期字串: True/False},True代表當天該指數收盤 > 指數自己的15MA"""
-    print(f"抓取指數({ticker})歷史資料...")
-    try:
-        df = yf.Ticker(ticker).history(period=HISTORY_PERIOD, auto_adjust=True)
-    except Exception as e:
-        print(f"[warn] 指數{ticker}抓取失敗: {e}")
-        return {}
-    if df is None or df.empty:
-        print(f"[warn] 指數{ticker}資料是空的")
+def fetch_index_regime(ticker: str, max_retries: int = 3) -> dict:
+    """回傳 {日期字串: True/False},True代表當天該指數收盤 > 指數自己的15MA。
+    加上重試機制,避免單次連線不穩定就整個放棄(指數資料只抓一次,不像股價
+    要抓上千次,多等幾秒重試的成本很低,值得做)。
+    """
+    import time as _time
+    df = None
+    for attempt in range(1, max_retries + 1):
+        print(f"抓取指數({ticker})歷史資料...(第{attempt}次嘗試)")
+        try:
+            df = yf.Ticker(ticker).history(period=HISTORY_PERIOD, auto_adjust=True)
+        except Exception as e:
+            print(f"[warn] 指數{ticker}第{attempt}次抓取失敗: {e}")
+            df = None
+
+        # 成功的判斷標準:資料筆數要夠長(至少涵蓋大部分5年,不能只有1天這種明顯異常值)
+        if df is not None and not df.empty and len(df) >= 200:
+            break
+
+        if df is not None and not df.empty:
+            print(f"[warn] 指數{ticker}第{attempt}次只抓到 {len(df)} 天,判斷資料不完整,準備重試")
+        if attempt < max_retries:
+            _time.sleep(5)
+
+    if df is None or df.empty or len(df) < 200:
+        print(f"[warn] 指數{ticker}重試{max_retries}次後仍然資料不足,回傳空結果")
         return {}
 
     close = df["Close"].dropna()
@@ -242,6 +258,12 @@ def simulate_stock(df: pd.DataFrame, ticker: str, market: str, twse_regime: dict
 def run_backtest(max_stocks: int | None = None):
     twse_regime = fetch_index_regime(TWSE_INDEX_TICKER)
     otc_regime = fetch_index_regime(OTC_INDEX_TICKER)
+
+    if len(twse_regime) < 200 or len(otc_regime) < 200:
+        print("\n❌ 指數資料抓取不完整(重試後仍失敗),為避免浪費時間跑出無意義的結果,提早中止。")
+        print(f"   加權指數資料筆數: {len(twse_regime)}, 櫃買指數資料筆數: {len(otc_regime)}")
+        print("   請稍後重新執行一次(通常是暫時性的連線問題)。")
+        return []
 
     # 順便印出兩指數的同步程度,直接回答「加權跟櫃買同不同步」這個問題
     common_dates = set(twse_regime.keys()) & set(otc_regime.keys())
