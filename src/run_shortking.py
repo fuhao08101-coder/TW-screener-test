@@ -1,7 +1,6 @@
 """
-短線王:每日掃描組合C進場訊號(收盤站上5日高+乖離8%+ATR14>=8),
-附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤。
-外資融資雙買資訊已移除(回測證實會拉低期望值,不再抓取、不再顯示)。
+短線王:每日掃描組合C進場訊號(收盤站上5日高+乖離8%+ATR14>=8+大盤環境濾網),
+附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤,以及大盤(加權/櫃買)強弱狀態。
 輸出 docs/shortking_results.json
 用法(手動觸發): python src/run_shortking.py
 """
@@ -53,8 +52,8 @@ def main():
         print(f"❌ 股票清單異常過少,放棄這次更新,保留前一天的結果。")
         return
 
-    print("開始掃描短線王訊號(上市+上櫃,組合C)...")
-    results = scan_universe(universe)
+    print("開始掃描短線王訊號(上市+上櫃,組合C+大盤濾網)...")
+    results, market_regime = scan_universe(universe)
     print(f"符合條件: {len(results)} 檔")
 
     print("抓取月營收資料...")
@@ -109,6 +108,7 @@ def main():
             "bias_min_threshold": BIAS_MIN_THRESHOLD,
             "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
         },
+        "market_regime": market_regime,
         "count": len(results),
         "results": results,
     }
