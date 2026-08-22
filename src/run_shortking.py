@@ -1,5 +1,7 @@
 """
-短線王:每日掃描v12進場訊號,附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤。
+短線王:每日掃描組合C進場訊號(收盤站上5日高+乖離8%+ATR14>=8),
+附加月營收MoM/YoY、相同族群標籤、鉅額交易標籤。
+外資融資雙買資訊已移除(回測證實會拉低期望值,不再抓取、不再顯示)。
 輸出 docs/shortking_results.json
 用法(手動觸發): python src/run_shortking.py
 """
@@ -20,7 +22,6 @@ from shortking_screener import (
     SHORT_MA_PERIOD,
     BIAS_MIN_THRESHOLD,
     BREAKOUT_LOOKBACK_DAYS,
-    REQUIRE_DUAL_BUY,
 )
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "shortking_results.json")
@@ -52,7 +53,7 @@ def main():
         print(f"❌ 股票清單異常過少,放棄這次更新,保留前一天的結果。")
         return
 
-    print("開始掃描短線王訊號(上市+上櫃)...")
+    print("開始掃描短線王訊號(上市+上櫃,組合C)...")
     results = scan_universe(universe)
     print(f"符合條件: {len(results)} 檔")
 
@@ -107,7 +108,6 @@ def main():
             "short_ma": SHORT_MA_PERIOD,
             "bias_min_threshold": BIAS_MIN_THRESHOLD,
             "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
-            "require_dual_buy": REQUIRE_DUAL_BUY,
         },
         "count": len(results),
         "results": results,
