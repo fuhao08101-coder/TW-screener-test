@@ -1,0 +1,30 @@
+name: Backtest Shortking 5Y vs V2
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_stocks:
+        description: "限制測試股票數量(留空=跑全部;先填100可以快速測試流程有沒有跑通)"
+        required: false
+        default: ""
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run backtest
+        run: |
+          if [ -n "${{ github.event.inputs.max_stocks }}" ]; then
+            python src/backtest_shortking_5y.py --max-stocks ${{ github.event.inputs.max_stocks }}
+          else
+            python src/backtest_shortking_5y.py
+          fi
