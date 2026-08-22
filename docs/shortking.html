@@ -254,3 +254,34 @@ document.getElementById('industry-summary-header').addEventListener('click', () 
 async function load(){
   const main = document.getElementById('main');
   try{
+    const res = await fetch('shortking_results.json?_=' + Date.now());
+    const data = await res.json();
+
+    document.getElementById('status-text').textContent = '已連線';
+    historyData = data.history || [];
+
+    if(!historyData.length){
+      main.innerHTML = '<div class="empty">還沒有掃描結果。<br>請先讓 GitHub Actions 跑過一次。</div>';
+      return;
+    }
+
+    document.getElementById('day-tabs').innerHTML = historyData.map((d, i) =>
+      `<div class="day-tab" data-idx="${i}">${d.date}</div>`
+    ).join('');
+
+    document.querySelectorAll('.day-tab').forEach(el => {
+      el.addEventListener('click', () => renderDay(parseInt(el.dataset.idx)));
+    });
+
+    renderDay(0);
+
+  }catch(e){
+    document.getElementById('status-text').textContent = '尚無資料';
+    main.innerHTML = '<div class="empty">還沒有掃描結果。<br>請先讓 GitHub Actions 跑過一次,<br>或手動觸發 workflow。</div>';
+  }
+}
+load();
+</script>
+
+</body>
+</html>
