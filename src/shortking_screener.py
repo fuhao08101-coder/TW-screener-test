@@ -23,6 +23,7 @@ from __future__ import annotations
 import time
 from datetime import date, timedelta
 import pandas as pd
+import requests
 import yfinance as yf
 
 ATR_PERIOD = 14
@@ -50,6 +51,76 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(alpha=1 / period, adjust=False).mean()
 
 
+def _fetch_otc_index_official(months_back: int = 4) -> dict | None:
+    """
+    改用櫃買中心官方「櫃買指數(月查詢)」報表取得櫃買指數近況,取代不穩定的yfinance ^TWOII。
+    已實測確認端點:https://www.tpex.org.tw/web/stock/iNdex_info/inxh/inx_result.php
+    即時掃描只需要近況(算15MA用),抓近4個月就足夠,不用像回測抓5年,速度很快。
+    """
+    url = "https://www.tpex.org.tw/web/stock/iNdex_info/inxh/inx_result.php"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    }
+
+    all_rows = []
+    today = date.today()
+    year, month = today.year, today.month
+
+    for i in range(months_back):
+        roc_year = year - 1911
+        date_param = f"{roc_year}/{month:02d}"
+
+        for attempt in range(1, 4):
+            try:
+                r = requests.get(url, headers=headers, params={"l": "zh-tw", "d": date_param}, timeout=20)
+                if r.status_code == 200:
+                    payload = r.json()
+                    tables = payload.get("tables") or []
+                    if tables:
+                        fields = tables[0].get("fields") or []
+                        rows = tables[0].get("data") or []
+                        idx_date = fields.index("日期") if "日期" in fields else 0
+                        idx_close = fields.index("收市") if "收市" in fields else 4
+                        for row in rows:
+                            if len(row) <= max(idx_date, idx_close):
+                                continue
+                            date_str = row[idx_date].replace("/", "-")
+                            try:
+                                close_val = float(row[idx_close])
+                            except (ValueError, TypeError):
+                                continue
+                            all_rows.append((date_str, close_val))
+                    break
+            except Exception as e:
+                print(f"[warn] 櫃買指數官方報表 {date_param} 第{attempt}次抓取失敗: {e}")
+            time.sleep(1)
+
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+        time.sleep(0.3)
+
+    if len(all_rows) < SHORT_MA_PERIOD + 5:
+        print(f"[warn] 櫃買指數官方報表資料不足({len(all_rows)}天),大盤濾網這次對上櫃停用(保守放行)")
+        return None
+
+    all_rows.sort(key=lambda x: x[0])
+    closes = pd.Series([c for _, c in all_rows], index=pd.to_datetime([d for d, _ in all_rows]))
+    closes = closes[~closes.index.duplicated(keep="last")].sort_index()
+
+    ma15 = closes.rolling(SHORT_MA_PERIOD).mean()
+    latest_close = float(closes.iloc[-1])
+    latest_ma15 = float(ma15.iloc[-1])
+    return {
+        "is_strong": latest_close > latest_ma15,
+        "close": round(latest_close, 2),
+        "ma15": round(latest_ma15, 2),
+    }
+
+
 def fetch_market_regime() -> dict:
     """
     回傳今天的大盤環境狀態:
@@ -59,24 +130,25 @@ def fetch_market_regime() -> dict:
     }
     抓取失敗的那一邊會回傳 None,呼叫端要自己判斷怎麼處理(目前策略是:
     抓不到就保守放行,不因為資料源問題誤擋掉整個市場)。
+    加權指數用yfinance(一直穩定),櫃買指數改用櫃買中心官方報表(比yfinance ^TWOII穩定)。
     """
     end_date = date.today()
     start_date = end_date - timedelta(days=INDEX_HISTORY_DAYS)
 
-    def _fetch_one(ticker: str, max_retries: int = 3):
+    def _fetch_twii(max_retries: int = 3):
         df = None
         for attempt in range(1, max_retries + 1):
             try:
-                df = yf.Ticker(ticker).history(start=start_date, end=end_date, auto_adjust=True)
+                df = yf.Ticker(TWSE_INDEX_TICKER).history(start=start_date, end=end_date, auto_adjust=True)
             except Exception as e:
-                print(f"[warn] 指數{ticker}第{attempt}次抓取失敗: {e}")
+                print(f"[warn] 指數^TWII第{attempt}次抓取失敗: {e}")
                 df = None
             if df is not None and not df.empty and len(df) >= SHORT_MA_PERIOD + 5:
                 break
             if attempt < max_retries:
                 time.sleep(3)
         if df is None or df.empty or len(df) < SHORT_MA_PERIOD + 5:
-            print(f"[warn] 指數{ticker}資料不足,大盤濾網這次對此市場停用(保守放行)")
+            print(f"[warn] 指數^TWII資料不足,大盤濾網這次對上市停用(保守放行)")
             return None
         close = df["Close"].dropna()
         ma15 = close.rolling(SHORT_MA_PERIOD).mean()
@@ -89,8 +161,8 @@ def fetch_market_regime() -> dict:
         }
 
     print("抓取大盤環境資料(加權+櫃買指數)...")
-    twse_regime = _fetch_one(TWSE_INDEX_TICKER)
-    otc_regime = _fetch_one(OTC_INDEX_TICKER)
+    twse_regime = _fetch_twii()
+    otc_regime = _fetch_otc_index_official()
 
     if twse_regime:
         print(f"加權指數: 收盤{twse_regime['close']} / 15MA{twse_regime['ma15']} "
