@@ -60,7 +60,7 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(alpha=1 / period, adjust=False).mean()
 
 
-def fetch_index_regime(ticker: str, max_retries: int = 3) -> dict:
+def fetch_index_regime(ticker: str, max_retries: int = 5) -> dict:
     """回傳 {日期字串: True/False},True代表當天該指數收盤 > 指數自己的15MA"""
     from datetime import date, timedelta
     end_date = date.today()
@@ -77,7 +77,7 @@ def fetch_index_regime(ticker: str, max_retries: int = 3) -> dict:
         if df is not None and not df.empty and len(df) >= 200:
             break
         if attempt < max_retries:
-            time.sleep(5)
+            time.sleep(10)  # 加大間隔,降低觸發API限流機率
 
     if df is None or df.empty or len(df) < 200:
         print(f"[warn] 指數{ticker}日期區間查詢仍不足,改試 yf.download() 方式...")
@@ -294,6 +294,8 @@ def _record_trade(trades, ticker, market, variant, pos, exit_date_key, exit_pric
 
 def run_backtest(max_stocks: int | None = None):
     twse_regime = fetch_index_regime(TWSE_INDEX_TICKER)
+    print("等待10秒再抓下一個指數,避免連續請求觸發API限流...")
+    time.sleep(10)
     otc_regime = fetch_index_regime(OTC_INDEX_TICKER)
 
     if len(twse_regime) < 200 or len(otc_regime) < 200:
