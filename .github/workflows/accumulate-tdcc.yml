@@ -1,0 +1,36 @@
+name: Accumulate TDCC Holders (Weekly)
+
+on:
+  schedule:
+    # 每週二台北時間中午12:00(UTC 04:00),集保資料通常週末更新完畢後幾天發布,
+    # 週二抓應該已經是最新一週的資料
+    - cron: "0 4 * * 2"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  accumulate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Accumulate TDCC holders data
+        run: python src/accumulate_tdcc_holders.py
+
+      - name: Commit results
+        run: |
+          git config user.name "tw-screener-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add docs/tdcc_holders_history.json
+          git diff --staged --quiet || git commit -m "chore: accumulate TDCC holders snapshot $(date +'%Y-%m-%d')"
+          git pull --rebase origin main
+          git push
