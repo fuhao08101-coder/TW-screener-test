@@ -247,7 +247,7 @@ def prepare_stock_series(df: pd.DataFrame, ticker: str, market: str, twse_regime
 def run_coordinated_simulation(all_stock_data: dict, master_dates: list[str], variant: str) -> list[dict]:
     """
     all_stock_data: {ticker: {market, series: {date_str: {...}}}}
-    variant: "全部訊號" 或 "前3名"
+    variant: "全部訊號" / "前3名" / "純上市前3名" / "純上市全部訊號"
     """
     trades = []
     positions = {}  # ticker -> {entry_date, entry_price, signal_low, highest_close,
@@ -321,16 +321,19 @@ def run_coordinated_simulation(all_stock_data: dict, master_dates: list[str], va
             del positions[t]
 
         # 第二步:找出當天新訊號候選
+        only_twse = variant in ("純上市前3名", "純上市全部訊號")
         candidates = []
         for ticker, data in all_stock_data.items():
             if ticker in positions:
+                continue
+            if only_twse and data["market"] != "TWSE":
                 continue
             info = data["series"].get(date_key)
             if info is None or not info["entry_signal"]:
                 continue
             candidates.append((ticker, info["bias"] or 0, info["close"], info["low"]))
 
-        if variant == "前3名":
+        if variant in ("前3名", "純上市前3名"):
             candidates.sort(key=lambda x: x[1], reverse=True)
             candidates = candidates[:TOP_N_PER_DAY]
 
@@ -416,11 +419,19 @@ def run_backtest(max_stocks: int | None = None):
     trades_all = run_coordinated_simulation(all_stock_data, master_dates, "全部訊號")
     print(f"產生 {len(trades_all)} 筆交易")
 
-    print("模擬變體B:每日僅前3高乖離進場...")
+    print("模擬變體B:每日僅前3高乖離進場(全市場混合選)...")
     trades_top3 = run_coordinated_simulation(all_stock_data, master_dates, "前3名")
     print(f"產生 {len(trades_top3)} 筆交易")
 
-    return trades_all + trades_top3
+    print("模擬變體C:純上市,每日僅前3高乖離進場...")
+    trades_twse_top3 = run_coordinated_simulation(all_stock_data, master_dates, "純上市前3名")
+    print(f"產生 {len(trades_twse_top3)} 筆交易")
+
+    print("模擬變體D:純上市,不限筆數,全部訊號進場...")
+    trades_twse_all = run_coordinated_simulation(all_stock_data, master_dates, "純上市全部訊號")
+    print(f"產生 {len(trades_twse_all)} 筆交易")
+
+    return trades_all + trades_top3 + trades_twse_top3 + trades_twse_all
 
 
 def _stats_for(trades: list[dict], label: str):
@@ -441,17 +452,18 @@ def _stats_for(trades: list[dict], label: str):
 
 def print_report(trades: list[dict]):
     print("\n" + "=" * 70)
-    print("全部訊號進場 vs 每日僅前3高乖離進場")
+    print("四種進場策略對照:全市場全部訊號 / 全市場前3名 / 純上市前3名 / 純上市全部訊號")
     print("=" * 70)
 
-    for v in ["全部訊號", "前3名"]:
+    for v in ["全部訊號", "前3名", "純上市前3名", "純上市全部訊號"]:
         v_trades = [t for t in trades if t["variant"] == v]
         print(f"\n--- {v} ---")
         _stats_for(v_trades, f"{v} / 全部")
-        twse = [t for t in v_trades if t["market"] == "TWSE"]
-        tpex = [t for t in v_trades if t["market"] == "TPEX"]
-        _stats_for(twse, f"{v} / 上市")
-        _stats_for(tpex, f"{v} / 上櫃")
+        if v in ("全部訊號", "前3名"):
+            twse = [t for t in v_trades if t["market"] == "TWSE"]
+            tpex = [t for t in v_trades if t["market"] == "TPEX"]
+            _stats_for(twse, f"{v} / 上市")
+            _stats_for(tpex, f"{v} / 上櫃")
 
 
 if __name__ == "__main__":
