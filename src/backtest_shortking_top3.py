@@ -60,40 +60,60 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(alpha=1 / period, adjust=False).mean()
 
 
-def fetch_index_regime(ticker: str, max_retries: int = 5) -> dict:
-    """回傳 {日期字串: True/False},True代表當天該指數收盤 > 指數自己的15MA"""
+def fetch_index_regime(ticker: str, max_retries: int = 3) -> dict:
+    """
+    回傳 {日期字串: True/False},True代表當天該指數收盤 > 指數自己的15MA。
+    改用「分段抓取」:一次要5年份資料量對某些指數代號(尤其^TWOII)不穩定,
+    容易整個失敗,改成每次只抓約1年,分5段抓完再拼起來,每段查詢範圍小,
+    穩定性比較高,即使某一段失敗也只需要重試那一段,不用整個重來。
+    """
     from datetime import date, timedelta
+
     end_date = date.today()
-    start_date = end_date - timedelta(days=365 * 5 + 30)
+    total_days = 365 * 5 + 30
+    chunk_days = 370  # 每段抓約1年多一點,確保有重疊、不漏資料
 
-    df = None
-    for attempt in range(1, max_retries + 1):
-        print(f"抓取指數({ticker})歷史資料...(第{attempt}次嘗試)")
-        try:
-            df = yf.Ticker(ticker).history(start=start_date, end=end_date, auto_adjust=True)
-        except Exception as e:
-            print(f"[warn] 指數{ticker}第{attempt}次抓取失敗: {e}")
-            df = None
-        if df is not None and not df.empty and len(df) >= 200:
-            break
-        if attempt < max_retries:
-            time.sleep(10)  # 加大間隔,降低觸發API限流機率
+    chunks = []
+    chunk_end = end_date
+    while (end_date - chunk_end).days < total_days:
+        chunk_start = chunk_end - timedelta(days=chunk_days)
+        chunks.append((chunk_start, chunk_end))
+        chunk_end = chunk_start
+    chunks.reverse()  # 由舊到新排列,方便後續合併
 
-    if df is None or df.empty or len(df) < 200:
-        print(f"[warn] 指數{ticker}日期區間查詢仍不足,改試 yf.download() 方式...")
-        try:
-            df = yf.download(ticker, start=start_date, end=end_date, auto_adjust=True, progress=False)
-        except Exception as e:
-            print(f"[warn] 指數{ticker} yf.download() 也失敗: {e}")
-            df = None
+    all_frames = []
+    for seg_idx, (c_start, c_end) in enumerate(chunks, 1):
+        df = None
+        for attempt in range(1, max_retries + 1):
+            print(f"抓取指數({ticker})第{seg_idx}/{len(chunks)}段"
+                  f"({c_start}~{c_end})...(第{attempt}次嘗試)")
+            try:
+                df = yf.Ticker(ticker).history(start=c_start, end=c_end, auto_adjust=True)
+            except Exception as e:
+                print(f"[warn] 指數{ticker}第{seg_idx}段第{attempt}次抓取失敗: {e}")
+                df = None
+            if df is not None and not df.empty:
+                break
+            if attempt < max_retries:
+                time.sleep(5)
+        if df is not None and not df.empty:
+            all_frames.append(df)
+        else:
+            print(f"[warn] 指數{ticker}第{seg_idx}段最終仍失敗,這段資料會缺漏")
+        time.sleep(2)  # 每段之間留一點間隔
 
-    if df is None or df.empty or len(df) < 200:
-        print(f"[warn] 指數{ticker}所有方式都嘗試過,資料仍不足,回傳空結果")
+    if not all_frames:
+        print(f"[warn] 指數{ticker}所有分段都抓取失敗,回傳空結果")
         return {}
 
-    close = df["Close"].dropna()
-    if hasattr(close, "columns"):
-        close = close.iloc[:, 0]
+    df_all = pd.concat(all_frames)
+    df_all = df_all[~df_all.index.duplicated(keep="last")].sort_index()
+
+    if len(df_all) < 200:
+        print(f"[warn] 指數{ticker}合併後仍只有 {len(df_all)} 天,資料不足")
+        return {}
+
+    close = df_all["Close"].dropna()
     ma15 = close.rolling(SHORT_MA_PERIOD).mean()
     regime = (close > ma15).fillna(False)
 
