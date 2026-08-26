@@ -60,67 +60,121 @@ def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     return tr.ewm(alpha=1 / period, adjust=False).mean()
 
 
-def fetch_index_regime(ticker: str, max_retries: int = 3) -> dict:
-    """
-    回傳 {日期字串: True/False},True代表當天該指數收盤 > 指數自己的15MA。
-    改用「分段抓取」:一次要5年份資料量對某些指數代號(尤其^TWOII)不穩定,
-    容易整個失敗,改成每次只抓約1年,分5段抓完再拼起來,每段查詢範圍小,
-    穩定性比較高,即使某一段失敗也只需要重試那一段,不用整個重來。
-    """
+def fetch_twii_regime(max_retries: int = 3) -> dict:
+    """加權指數(^TWII)維持用yfinance抓取,這個代號一直運作正常,不用改"""
     from datetime import date, timedelta
-
     end_date = date.today()
-    total_days = 365 * 5 + 30
-    chunk_days = 370  # 每段抓約1年多一點,確保有重疊、不漏資料
+    start_date = end_date - timedelta(days=365 * 5 + 30)
 
-    chunks = []
-    chunk_end = end_date
-    while (end_date - chunk_end).days < total_days:
-        chunk_start = chunk_end - timedelta(days=chunk_days)
-        chunks.append((chunk_start, chunk_end))
-        chunk_end = chunk_start
-    chunks.reverse()  # 由舊到新排列,方便後續合併
+    df = None
+    for attempt in range(1, max_retries + 1):
+        print(f"抓取指數(^TWII)歷史資料...(第{attempt}次嘗試)")
+        try:
+            df = yf.Ticker("^TWII").history(start=start_date, end=end_date, auto_adjust=True)
+        except Exception as e:
+            print(f"[warn] 指數^TWII第{attempt}次抓取失敗: {e}")
+            df = None
+        if df is not None and not df.empty and len(df) >= 200:
+            break
+        if attempt < max_retries:
+            time.sleep(5)
 
-    all_frames = []
-    for seg_idx, (c_start, c_end) in enumerate(chunks, 1):
-        df = None
-        for attempt in range(1, max_retries + 1):
-            print(f"抓取指數({ticker})第{seg_idx}/{len(chunks)}段"
-                  f"({c_start}~{c_end})...(第{attempt}次嘗試)")
-            try:
-                df = yf.Ticker(ticker).history(start=c_start, end=c_end, auto_adjust=True)
-            except Exception as e:
-                print(f"[warn] 指數{ticker}第{seg_idx}段第{attempt}次抓取失敗: {e}")
-                df = None
-            if df is not None and not df.empty:
-                break
-            if attempt < max_retries:
-                time.sleep(5)
-        if df is not None and not df.empty:
-            all_frames.append(df)
-        else:
-            print(f"[warn] 指數{ticker}第{seg_idx}段最終仍失敗,這段資料會缺漏")
-        time.sleep(2)  # 每段之間留一點間隔
-
-    if not all_frames:
-        print(f"[warn] 指數{ticker}所有分段都抓取失敗,回傳空結果")
+    if df is None or df.empty or len(df) < 200:
+        print(f"[warn] 指數^TWII資料不足,回傳空結果")
         return {}
 
-    df_all = pd.concat(all_frames)
-    df_all = df_all[~df_all.index.duplicated(keep="last")].sort_index()
-
-    if len(df_all) < 200:
-        print(f"[warn] 指數{ticker}合併後仍只有 {len(df_all)} 天,資料不足")
-        return {}
-
-    close = df_all["Close"].dropna()
+    close = df["Close"].dropna()
     ma15 = close.rolling(SHORT_MA_PERIOD).mean()
     regime = (close > ma15).fillna(False)
 
     out = {}
     for dt, val in regime.items():
         out[dt.strftime("%Y-%m-%d")] = bool(val)
-    print(f"指數{ticker}環境資料:共 {len(out)} 個交易日,其中站上15MA的天數: {sum(out.values())} 天")
+    print(f"指數^TWII環境資料:共 {len(out)} 個交易日,其中站上15MA的天數: {sum(out.values())} 天")
+    return out
+
+
+def fetch_otc_index_regime_official(months_back: int = 61) -> dict:
+    """
+    改用櫃買中心官方「櫃買指數(月查詢)」報表,取代不穩定的yfinance ^TWOII。
+    已實測確認端點:https://www.tpex.org.tw/web/stock/iNdex_info/inxh/inx_result.php
+    參數:l=zh-tw, d=民國年/月(例如115/08),不要加o=data(那個是CSV格式,這個要JSON)
+    JSON結構:{"tables":[{"fields":["日期","開市","最高","最低","收市","漲/跌"],"data":[[...],...]}]}
+    這個端點一次查詢只回傳「一個月」的資料,所以要逐月往回查詢、拼接起來,
+    才能湊出5年的歷史(這是官方資料源常見的限制,不像yfinance可以一次要5年)。
+    """
+    import requests
+    import time as _time
+    from datetime import date
+
+    url = "https://www.tpex.org.tw/web/stock/iNdex_info/inxh/inx_result.php"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    }
+
+    all_rows = []  # [(date_str_yyyy_mm_dd, close_float), ...]
+    today = date.today()
+    year, month = today.year, today.month
+
+    for i in range(months_back):
+        roc_year = year - 1911
+        date_param = f"{roc_year}/{month:02d}"
+
+        success = False
+        for attempt in range(1, 4):
+            try:
+                r = requests.get(url, headers=headers, params={"l": "zh-tw", "d": date_param}, timeout=20)
+                if r.status_code == 200:
+                    payload = r.json()
+                    tables = payload.get("tables") or []
+                    if tables:
+                        fields = tables[0].get("fields") or []
+                        rows = tables[0].get("data") or []
+                        idx_date = fields.index("日期") if "日期" in fields else 0
+                        idx_close = fields.index("收市") if "收市" in fields else 4
+                        for row in rows:
+                            if len(row) <= max(idx_date, idx_close):
+                                continue
+                            date_str = row[idx_date].replace("/", "-")  # "2026/08/03" -> "2026-08-03"
+                            try:
+                                close_val = float(row[idx_close])
+                            except (ValueError, TypeError):
+                                continue
+                            all_rows.append((date_str, close_val))
+                        success = True
+                        break
+            except Exception as e:
+                print(f"[warn] 櫃買指數官方報表 {date_param} 第{attempt}次抓取失敗: {e}")
+            _time.sleep(2)
+
+        if not success:
+            print(f"[warn] 櫃買指數官方報表 {date_param} 三次都失敗,這個月資料會缺漏")
+
+        # 往前推一個月
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+        _time.sleep(0.5)
+
+    if len(all_rows) < 200:
+        print(f"[warn] 櫃買指數官方報表合併後僅 {len(all_rows)} 天,資料不足")
+        return {}
+
+    all_rows.sort(key=lambda x: x[0])
+    dates = [d for d, _ in all_rows]
+    closes = pd.Series([c for _, c in all_rows], index=pd.to_datetime(dates))
+    closes = closes[~closes.index.duplicated(keep="last")].sort_index()
+
+    ma15 = closes.rolling(SHORT_MA_PERIOD).mean()
+    regime = (closes > ma15).fillna(False)
+
+    out = {}
+    for dt, val in regime.items():
+        out[dt.strftime("%Y-%m-%d")] = bool(val)
+    print(f"櫃買指數(官方資料源):共 {len(out)} 個交易日,其中站上15MA的天數: {sum(out.values())} 天")
     return out
 
 
@@ -313,10 +367,9 @@ def _record_trade(trades, ticker, market, variant, pos, exit_date_key, exit_pric
 
 
 def run_backtest(max_stocks: int | None = None):
-    twse_regime = fetch_index_regime(TWSE_INDEX_TICKER)
-    print("等待10秒再抓下一個指數,避免連續請求觸發API限流...")
-    time.sleep(10)
-    otc_regime = fetch_index_regime(OTC_INDEX_TICKER)
+    twse_regime = fetch_twii_regime()
+    print("改用官方資料源抓取櫃買指數,不再依賴不穩定的yfinance ^TWOII...")
+    otc_regime = fetch_otc_index_regime_official()
 
     if len(twse_regime) < 200 or len(otc_regime) < 200:
         print("\n❌ 指數資料抓取不完整,提早中止。")
