@@ -1,21 +1,23 @@
 """
-短線王(組合C + 大盤環境濾網)篩選器:適合短線/權證操作的進場訊號。
+短線王(APP上市版:組合C + 大盤濾網 + 外資融資雙買 + 每日前6名乖離)篩選器。
+適合短線/權證操作的進場訊號,已通過牛熊市回測驗證。
 
 篩選條件(當天同時符合,收盤價直接進場):
-  ATR14絕對值 >= 8
-  收盤 > 15MA
-  15MA乖離 >= 8%
-  收盤 > 近5個交易日最高點(用收盤價確認突破,不是盤中)
-  大盤環境濾網(新增,已回測驗證有效):
-    上市(TWSE)股票要進場,加權指數(^TWII)當天收盤必須站上指數自己的15MA
-    上櫃(TPEX)股票要進場,櫃買指數(^TWOII)當天收盤必須站上指數自己的15MA
-    兩個指數各自獨立判斷。回測顯示加了這條濾網後,上市期望值+1.38%→+1.64%、
-    上櫃+1.18%→+1.30%,兩邊都有改善,故正式採用。
+  1. ATR14絕對值 >= 8
+  2. 收盤 > 15MA
+  3. 15MA乖離 >= 8%
+  4. 收盤 > 近5個交易日最高點(用收盤價確認突破,不是盤中)
+  5. 大盤環境濾網:上市看加權指數(^TWII)15MA、上櫃看櫃買指數(官方報表)15MA,各自把關
+  6. 外資融資雙買濾網:近9個交易日內同天雙買過(外資買超+融資增加同一天),
+     且雙買之後沒有出現過同天雙減
+  7. 當天通過以上所有條件的候選股,只取「15MA乖離最高的前6名」
 
-【已拿掉外資融資雙買濾網】經全市場1年期回測驗證,加了雙買濾網後期望值反而下降,
-證實是扣分項,故移除,回到純價格邏輯。
+回測驗證紀錄:
+  順風期(2025.08-2026.07,全市場):642筆,勝率35.5%,期望值+2.50%
+  逆風期(2022.02-2023.02,全市場,含大盤修正期):110筆,勝率41.8%,期望值+1.47%
+  逆風期依然維持正期望值,證實不是單純靠多頭順風撐出來的假象,故正式採用。
 
-排序:依15MA乖離率由大到小排序。
+排序:依15MA乖離率由大到小排序(用來決定前6名)。
 
 還原日K:使用 yfinance auto_adjust=True。批次下載機制與 screener.py 相同。
 """
@@ -26,11 +28,14 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+from institutional_flow import build_dual_buy_qualified_set
+
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
 SHORT_MA_PERIOD = 15
 BIAS_MIN_THRESHOLD = 8.0
 BREAKOUT_LOOKBACK_DAYS = 5
+TOP_N_PER_DAY = 6   # 每日只取乖離最高的前N名(已回測驗證)
 
 TWSE_INDEX_TICKER = "^TWII"    # 加權指數
 OTC_INDEX_TICKER = "^TWOII"    # 櫃買指數
@@ -248,6 +253,9 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
     """回傳 (results, market_regime)"""
     market_regime = fetch_market_regime()
 
+    print("抓取外資融資雙買資料(近9個交易日,上市+上櫃)...")
+    dual_buy_qualified = build_dual_buy_qualified_set()
+
     results = []
     total = len(universe)
     ticker_to_name = {row["ticker"]: row for row in universe}
@@ -272,6 +280,11 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
             if regime is not None and not regime["is_strong"]:
                 continue
 
+            # 外資融資雙買濾網
+            code = t.replace(".TWO", "").replace(".TW", "")
+            if code not in dual_buy_qualified:
+                continue
+
             df = batch_data.get(t)
             try:
                 hit = _evaluate_from_df(df, t, row["name"])
@@ -283,4 +296,5 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
         time.sleep(BATCH_SLEEP)
 
     results.sort(key=lambda r: r["bias_pct"], reverse=True)
+    results = results[:TOP_N_PER_DAY]  # 只保留當日乖離最高的前N名
     return results, market_regime
