@@ -21,6 +21,7 @@ from shortking_screener import (
     SHORT_MA_PERIOD,
     BIAS_MIN_THRESHOLD,
     BREAKOUT_LOOKBACK_DAYS,
+    TOP_N_PER_DAY,
 )
 
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "shortking_results.json")
@@ -52,7 +53,7 @@ def main():
         print(f"❌ 股票清單異常過少,放棄這次更新,保留前一天的結果。")
         return
 
-    print("開始掃描短線王訊號(上市+上櫃,組合C+大盤濾網)...")
+    print("開始掃描短線王訊號(組合C+大盤濾網+雙買+前6名乖離)...")
     results, market_regime = scan_universe(universe)
     print(f"符合條件: {len(results)} 檔")
 
@@ -107,6 +108,8 @@ def main():
             "short_ma": SHORT_MA_PERIOD,
             "bias_min_threshold": BIAS_MIN_THRESHOLD,
             "breakout_lookback_days": BREAKOUT_LOOKBACK_DAYS,
+            "top_n_per_day": TOP_N_PER_DAY,
+            "require_dual_buy": True,
         },
         "market_regime": market_regime,
         "count": len(results),
