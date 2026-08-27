@@ -152,7 +152,7 @@
 </main>
 
 <footer>
-  條件:ATR14絕對值 ≥ 門檻,收盤 &gt; 15MA,15MA乖離 ≥ 門檻,收盤站上近5日高點(上市+上櫃)<br>
+  條件:ATR14絕對值 ≥ 門檻,收盤 &gt; 15MA,15MA乖離 ≥ 門檻,收盤站上近5日高點,大盤環境濾網,外資融資9日內雙買且無雙減,每日僅取乖離前6名(上市+上櫃)<br>
   依 15MA乖離率 由大到小排序<br>
   僅供研究參考,非投資建議
 </footer>
@@ -173,6 +173,8 @@ function renderDay(idx){
     <span class="chip">收盤 &gt; ${p.short_ma}MA</span>
     <span class="chip">乖離 ≥ ${p.bias_min_threshold}%</span>
     <span class="chip">收盤 &gt; 近${p.breakout_lookback_days}日高點</span>
+    ${p.require_dual_buy ? `<span class="chip">外資+融資雙買</span>` : ''}
+    <span class="chip">每日前${p.top_n_per_day}名</span>
   `;
 
   // 大盤環境燈號(加權/櫃買 強弱狀態)
