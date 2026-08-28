@@ -4,17 +4,25 @@
     1. 距離到期日還有一個月以上(履約截止日 >= 今天 + 30天)
     2. 依「執行比例」由高到低排序(執行比例 = 每仟單位權證可換購的標的股數)
 
+【已修正:上市+上櫃都涵蓋】
+  之前只用了 t187ap37_L(證交所,只收錄「標的是上市股票」的權證),
+  導致標的是上櫃股票的股票(例如7751竑騰、8358金居)完全查不到權證,
+  不是這些股票真的沒有權證,是資料源本身漏了一半。
+  已確認櫃買中心有對應的上櫃版本,端點:
+    https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap37_O
+  欄位結構跟上市版完全一致,現在把兩份資料合併使用。
+
 【第二層篩選(還沒做,需要富邦API的即時報價才能做)】:
   委買委賣張數(買200/賣10-499)、造市商掛單判斷、價差是否超過5個TICK,
-  這些都是即時盤中報價才有的資訊,t187ap37_L這份靜態參考資料完全不包含,
+  這些都是即時盤中報價才有的資訊,這份靜態參考資料完全不包含,
   等富邦API串接好之後,才能在這裡篩選出來的候選清單上,再做一次即時篩選。
-
-資料源:TWSE官方「上市權證基本資料」t187ap37_L(跟warrant_underlyings.py共用邏輯)
 """
 import requests
 from datetime import date, timedelta
 
-URL = "https://openapi.twse.com.tw/v1/opendata/t187ap37_L"
+TWSE_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap37_L"
+TPEX_URL = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap37_O"
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -46,20 +54,30 @@ def _roc_to_date(roc_str: str) -> date | None:
         return None
 
 
-def fetch_all_warrants(max_retries: int = 3) -> list[dict]:
-    """抓取全部權證基本資料(原始格式)"""
+def _fetch_one_source(url: str, source_name: str, max_retries: int = 3) -> list[dict]:
     import time
     for attempt in range(1, max_retries + 1):
         try:
-            r = requests.get(URL, headers=HEADERS, timeout=60)
+            r = requests.get(url, headers=HEADERS, timeout=60)
             if r.status_code == 200:
-                return r.json()
+                data = r.json()
+                print(f"  {source_name}: 成功取得 {len(data)} 檔權證")
+                return data
         except Exception as e:
-            print(f"[warn] 權證資料第{attempt}次抓取失敗: {e}")
+            print(f"[warn] {source_name}第{attempt}次抓取失敗: {e}")
         if attempt < max_retries:
             time.sleep(3)
-    print("[warn] 權證資料抓取失敗,回傳空清單")
+    print(f"[warn] {source_name}抓取失敗,這部分資料會缺漏")
     return []
+
+
+def fetch_all_warrants() -> list[dict]:
+    """抓取全部權證基本資料(合併上市+上櫃兩份來源)"""
+    twse_data = _fetch_one_source(TWSE_URL, "證交所(上市)")
+    tpex_data = _fetch_one_source(TPEX_URL, "櫃買中心(上櫃)")
+    combined = twse_data + tpex_data
+    print(f"合併後共 {len(combined)} 檔權證(上市{len(twse_data)}檔 + 上櫃{len(tpex_data)}檔)")
+    return combined
 
 
 def select_warrants_for_stock(stock_code: str, stock_name: str, all_warrants: list[dict],
@@ -105,16 +123,14 @@ if __name__ == "__main__":
     import os
     sys.path.insert(0, os.path.dirname(__file__))
 
-    TEST_CODE = "2330"
-    TEST_NAME = "台積電"
-
-    print("抓取權證資料...")
+    print("抓取權證資料(上市+上櫃)...")
     all_warrants = fetch_all_warrants()
-    print(f"共 {len(all_warrants)} 檔權證")
 
-    candidates = select_warrants_for_stock(TEST_CODE, TEST_NAME, all_warrants)
-    print(f"\n{TEST_CODE}({TEST_NAME})符合條件(到期日一個月以上)的權證,"
-          f"共 {len(candidates)} 檔,依執行比例由高到低列出前10檔:")
-    for c in candidates[:10]:
-        print(f"  {c['warrant_code']} {c['warrant_name']}({c['warrant_type']}) "
-              f"執行比例{c['exercise_ratio']} 到期{c['expiry_date']}(還有{c['days_to_expiry']}天)")
+    # 測試兩檔:一檔上市(台積電)、一檔之前查不到的上櫃(竑騰)
+    for TEST_CODE, TEST_NAME in [("2330", "台積電"), ("7751", "竑騰")]:
+        candidates = select_warrants_for_stock(TEST_CODE, TEST_NAME, all_warrants)
+        print(f"\n{TEST_CODE}({TEST_NAME})符合條件(到期日一個月以上)的權證,"
+              f"共 {len(candidates)} 檔,依執行比例由高到低列出前5檔:")
+        for c in candidates[:5]:
+            print(f"  {c['warrant_code']} {c['warrant_name']}({c['warrant_type']}) "
+                  f"執行比例{c['exercise_ratio']} 到期{c['expiry_date']}(還有{c['days_to_expiry']}天)")
