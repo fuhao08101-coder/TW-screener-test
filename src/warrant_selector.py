@@ -56,9 +56,16 @@ def _roc_to_date(roc_str: str) -> date | None:
 
 def _fetch_one_source(url: str, source_name: str, max_retries: int = 3) -> list[dict]:
     import time
+    import urllib3
+    # tpex.org.tw這個網站的SSL憑證缺少「Subject Key Identifier」這個技術欄位,
+    # 導致部分環境(尤其Windows)的SSL驗證會直接擋下連線。這是官方政府機構網站,
+    # 屬於已知可信任來源,這裡刻意關閉SSL驗證來繞過這個憑證瑕疵問題。
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    verify_ssl = "tpex.org.tw" not in url
+
     for attempt in range(1, max_retries + 1):
         try:
-            r = requests.get(url, headers=HEADERS, timeout=60)
+            r = requests.get(url, headers=HEADERS, timeout=60, verify=verify_ssl)
             if r.status_code == 200:
                 data = r.json()
                 print(f"  {source_name}: 成功取得 {len(data)} 檔權證")
