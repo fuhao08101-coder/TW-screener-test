@@ -1,6 +1,33 @@
 {
-  "generated_at": "2026-08-27 15:54:25",
+  "generated_at": "2026-08-29 05:53:12",
   "history": [
+    {
+      "date": "2026-08-29",
+      "generated_at": "2026-08-29 05:53:12",
+      "params": {
+        "atr_period": 14,
+        "atr_min_threshold": 8.0,
+        "short_ma": 15,
+        "bias_min_threshold": 8.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 45975.22,
+          "ma15": 45293.93
+        },
+        "otc": {
+          "is_strong": true,
+          "close": 402.83,
+          "ma15": 394.53
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-08-27",
       "generated_at": "2026-08-27 15:54:25",
@@ -1126,165 +1153,6 @@
           "revenue_yoy_pct": 491.06,
           "same_group_industry": "半導體業",
           "has_block_trade": true
-        }
-      ]
-    },
-    {
-      "date": "2026-08-23",
-      "generated_at": "2026-08-23 00:18:34",
-      "params": {
-        "atr_period": 14,
-        "atr_min_threshold": 8.0,
-        "short_ma": 15,
-        "bias_min_threshold": 8.0,
-        "breakout_lookback_days": 5
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 45224.29,
-          "ma15": 44894.98
-        },
-        "otc": {
-          "is_strong": false,
-          "close": 378.44,
-          "ma15": 420.41
-        }
-      },
-      "count": 7,
-      "results": [
-        {
-          "ticker": "6213.TW",
-          "name": "聯茂",
-          "close": 513.0,
-          "high": 555.0,
-          "ma15": 431.5,
-          "bias_pct": 18.89,
-          "recent_high": 510.0,
-          "atr14": 31.7,
-          "signal_low": 498.5,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 12.71,
-          "revenue_yoy_pct": 96.88,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "5292.TW",
-          "name": "華懋",
-          "close": 218.0,
-          "high": 219.0,
-          "ma15": 185.57,
-          "bias_pct": 17.48,
-          "recent_high": 216.0,
-          "atr14": 8.83,
-          "signal_low": 207.5,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "綠能環保",
-          "revenue_mom_pct": 1.56,
-          "revenue_yoy_pct": 2.51,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6949.TW",
-          "name": "沛爾生醫-創",
-          "close": 1155.0,
-          "high": 1190.0,
-          "ma15": 1009.27,
-          "bias_pct": 14.44,
-          "recent_high": 1135.0,
-          "atr14": 63.13,
-          "signal_low": 1140.0,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "生技醫療業",
-          "revenue_mom_pct": -23.05,
-          "revenue_yoy_pct": -22.6,
-          "same_group_industry": "生技醫療業",
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6278.TW",
-          "name": "台表科",
-          "close": 187.0,
-          "high": 190.5,
-          "ma15": 168.3,
-          "bias_pct": 11.11,
-          "recent_high": 181.5,
-          "atr14": 10.84,
-          "signal_low": 178.0,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "光電業",
-          "revenue_mom_pct": 6.66,
-          "revenue_yoy_pct": 12.18,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6830.TW",
-          "name": "汎銓",
-          "close": 462.0,
-          "high": 462.0,
-          "ma15": 417.57,
-          "bias_pct": 10.64,
-          "recent_high": 444.0,
-          "atr14": 31.02,
-          "signal_low": 417.5,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "其他電子業",
-          "revenue_mom_pct": 16.72,
-          "revenue_yoy_pct": 26.15,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "5284.TW",
-          "name": "jpp-KY",
-          "close": 334.5,
-          "high": 349.5,
-          "ma15": 303.77,
-          "bias_pct": 10.12,
-          "recent_high": 318.0,
-          "atr14": 16.17,
-          "signal_low": 330.0,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "其他",
-          "revenue_mom_pct": 5.98,
-          "revenue_yoy_pct": 35.27,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6472.TW",
-          "name": "保瑞",
-          "close": 455.0,
-          "high": 462.0,
-          "ma15": 418.97,
-          "bias_pct": 8.6,
-          "recent_high": 445.5,
-          "atr14": 18.42,
-          "signal_low": 432.0,
-          "as_of": "2026-08-21",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "生技醫療業",
-          "revenue_mom_pct": -17.25,
-          "revenue_yoy_pct": 5.77,
-          "same_group_industry": "生技醫療業",
-          "has_block_trade": false
         }
       ]
     }
