@@ -51,7 +51,14 @@ BIAS_VARIANTS = {
 def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
     high = df["High"]
     low = df["Low"]
-    prev_close = df["Close"].shift(1)
+    close = df["Close"]
+    if isinstance(high, pd.DataFrame):
+        high = high.iloc[:, 0]
+    if isinstance(low, pd.DataFrame):
+        low = low.iloc[:, 0]
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    prev_close = close.shift(1)
     tr = pd.concat([
         (high - low), (high - prev_close).abs(), (low - prev_close).abs(),
     ], axis=1).max(axis=1)
@@ -221,9 +228,24 @@ def _fetch_batch(tickers: list[str], period: str) -> dict[str, pd.DataFrame]:
 def prepare_stock_series(df: pd.DataFrame, market: str, twse_regime: dict, otc_regime: dict,
                           start_date: date, end_date: date):
     """回傳每天的 {close, low, ma15, bias, base_ok(不含乖離門檻的其餘條件是否通過)}"""
-    close = df["Close"].dropna()
+    close = df["Close"]
     high = df["High"]
     low = df["Low"]
+
+    # 防護:yfinance不同版本,批次下載偶爾會讓欄位變成多層DataFrame而不是單純的
+    # 一維Series,導致後續比較運算出錯("Can only compare identically-labeled
+    # Series objects")。這裡強制squeeze成一維,並且用.values重新包裝、拿掉可能
+    # 造成索引不一致的多餘欄位資訊,確保後面的運算穩定。
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    if isinstance(high, pd.DataFrame):
+        high = high.iloc[:, 0]
+    if isinstance(low, pd.DataFrame):
+        low = low.iloc[:, 0]
+
+    close = close.dropna()
+    high = high.reindex(close.index)
+    low = low.reindex(close.index)
 
     min_len = max(SHORT_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS) + 30
     if len(close) < min_len:
