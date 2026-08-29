@@ -14,7 +14,7 @@ on:
       max_stocks:
         description: "限制測試股票數量(留空=跑全部;先填100可以快速測試)"
         required: false
-        default: "100"
+        default: ""
 
 jobs:
   backtest:
