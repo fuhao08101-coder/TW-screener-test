@@ -1,8 +1,11 @@
 """
 權證選擇器(第一層篩選,不需要即時報價):
   對指定的標的股票代號,從所有掛在這檔股票下的權證裡,篩選出:
-    1. 距離到期日還有一個月以上(履約截止日 >= 今天 + 30天)
-    2. 依「執行比例」由高到低排序(執行比例 = 每仟單位權證可換購的標的股數)
+    1. 只選「認購」權證,排除「認售」——整套系統(短線王)是做多邏輯,
+       篩選的股票都是預期會漲的強勢股,認售權證是「賭會跌」,方向相反,
+       絕對不能買錯
+    2. 距離到期日還有一個月以上(履約截止日 >= 今天 + 30天)
+    3. 依「執行比例」由高到低排序(執行比例 = 每仟單位權證可換購的標的股數)
 
 【已修正:上市+上櫃都涵蓋】
   之前只用了 t187ap37_L(證交所,只收錄「標的是上市股票」的權證),
@@ -30,6 +33,10 @@ HEADERS = {
 }
 
 MIN_DAYS_TO_EXPIRY = 30  # 距離到期日至少要幾天以上
+
+# 排除的權證發行商關鍵字(權證簡稱裡包含這些字的,一律排除)
+# 使用者實戰經驗:這些發行商的權證常常報價很爛,委買委賣價差過大,不值得碰
+EXCLUDED_ISSUERS = ["統一"]
 
 
 def _normalize_name(name: str) -> str:
@@ -103,6 +110,14 @@ def select_warrants_for_stock(stock_code: str, stock_name: str, all_warrants: li
         if underlying != norm_target_name:
             continue
 
+        warrant_name = row.get("權證簡稱", "")
+        if any(issuer in warrant_name for issuer in EXCLUDED_ISSUERS):
+            continue  # 發行商在黑名單裡,排除
+
+        warrant_type = row.get("權證類型", "")
+        if warrant_type != "認購":
+            continue  # 整套系統是做多邏輯(股價要漲才賺),只選認購,排除認售
+
         expiry = _roc_to_date(row.get("履約截止日", ""))
         if expiry is None or expiry < cutoff:
             continue  # 距離到期日不足一個月,排除
@@ -115,7 +130,7 @@ def select_warrants_for_stock(stock_code: str, stock_name: str, all_warrants: li
         candidates.append({
             "warrant_code": row.get("權證代號", ""),
             "warrant_name": row.get("權證簡稱", ""),
-            "warrant_type": row.get("權證類型", ""),  # 認購 / 認售
+            "warrant_type": warrant_type,
             "expiry_date": expiry.isoformat(),
             "days_to_expiry": (expiry - today).days,
             "exercise_ratio": exercise_ratio,
