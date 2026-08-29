@@ -1,0 +1,38 @@
+name: Backtest Bias Compare
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "開始日期 (YYYY-MM-DD)"
+        required: true
+        default: "2025-08-01"
+      end_date:
+        description: "結束日期 (YYYY-MM-DD)"
+        required: true
+        default: "2026-08-31"
+      max_stocks:
+        description: "限制測試股票數量(留空=跑全部;先填100可以快速測試)"
+        required: false
+        default: "100"
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run backtest
+        run: |
+          if [ -n "${{ github.event.inputs.max_stocks }}" ]; then
+            python src/backtest_shortking_biascompare.py --start ${{ github.event.inputs.start_date }} --end ${{ github.event.inputs.end_date }} --max-stocks ${{ github.event.inputs.max_stocks }}
+          else
+            python src/backtest_shortking_biascompare.py --start ${{ github.event.inputs.start_date }} --end ${{ github.event.inputs.end_date }}
+          fi
