@@ -1,6 +1,72 @@
 {
-  "generated_at": "2026-09-02 21:50:02",
+  "generated_at": "2026-09-03 21:48:57",
   "history": [
+    {
+      "date": "2026-09-03",
+      "generated_at": "2026-09-03 21:48:57",
+      "params": {
+        "atr_period": 14,
+        "atr_min_threshold": 8.0,
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 46164.72,
+          "ma15": 45679.25
+        },
+        "otc": {
+          "is_strong": false,
+          "close": 395.25,
+          "ma15": 396.08
+        }
+      },
+      "count": 2,
+      "results": [
+        {
+          "ticker": "2464.TW",
+          "name": "盟立",
+          "close": 222.0,
+          "high": 222.0,
+          "ma15": 190.19,
+          "bias_pct": 16.73,
+          "recent_high": 215.95,
+          "atr14": 15.25,
+          "signal_low": 214.0,
+          "as_of": "2026-09-03",
+          "market": "TWSE",
+          "revenue_month": "11507",
+          "industry": "其他電子業",
+          "revenue_mom_pct": 6.2,
+          "revenue_yoy_pct": 62.1,
+          "same_group_industry": null,
+          "has_block_trade": false
+        },
+        {
+          "ticker": "7730.TW",
+          "name": "暉盛-創",
+          "close": 188.0,
+          "high": 188.0,
+          "ma15": 166.82,
+          "bias_pct": 12.7,
+          "recent_high": 181.0,
+          "atr14": 8.65,
+          "signal_low": 173.0,
+          "as_of": "2026-09-03",
+          "market": "TWSE",
+          "revenue_month": "11507",
+          "industry": "半導體業",
+          "revenue_mom_pct": -18.76,
+          "revenue_yoy_pct": 44.04,
+          "same_group_industry": null,
+          "has_block_trade": false
+        }
+      ]
+    },
     {
       "date": "2026-09-02",
       "generated_at": "2026-09-02 21:50:02",
@@ -566,148 +632,6 @@
           "revenue_yoy_pct": 30.96,
           "same_group_industry": null,
           "has_block_trade": null
-        }
-      ]
-    },
-    {
-      "date": "2026-08-27",
-      "generated_at": "2026-08-27 15:54:25",
-      "params": {
-        "atr_period": 14,
-        "atr_min_threshold": 8.0,
-        "short_ma": 15,
-        "bias_min_threshold": 8.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 45832.62,
-          "ma15": 45188.69
-        },
-        "otc": {
-          "is_strong": true,
-          "close": 400.38,
-          "ma15": 393.29
-        }
-      },
-      "count": 6,
-      "results": [
-        {
-          "ticker": "2351.TW",
-          "name": "順德",
-          "close": 240.0,
-          "high": 240.5,
-          "ma15": 185.37,
-          "bias_pct": 29.47,
-          "recent_high": 219.0,
-          "atr14": 13.98,
-          "signal_low": 213.0,
-          "as_of": "2026-08-27",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": 9.42,
-          "revenue_yoy_pct": 54.0,
-          "same_group_industry": "半導體業",
-          "has_block_trade": false
-        },
-        {
-          "ticker": "7751.TWO",
-          "name": "竑騰",
-          "close": 1985.0,
-          "high": 1985.0,
-          "ma15": 1541.67,
-          "bias_pct": 28.76,
-          "recent_high": 1890.0,
-          "atr14": 131.59,
-          "signal_low": 1805.0,
-          "as_of": "2026-08-27",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": -1.99,
-          "revenue_yoy_pct": 50.97,
-          "same_group_industry": "半導體業",
-          "has_block_trade": null
-        },
-        {
-          "ticker": "6933.TW",
-          "name": "AMAX-KY",
-          "close": 236.5,
-          "high": 236.5,
-          "ma15": 193.8,
-          "bias_pct": 22.03,
-          "recent_high": 215.0,
-          "atr14": 12.05,
-          "signal_low": 236.5,
-          "as_of": "2026-08-27",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電腦及週邊設備業",
-          "revenue_mom_pct": 1.63,
-          "revenue_yoy_pct": 197.35,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6805.TW",
-          "name": "富世達",
-          "close": 2225.0,
-          "high": 2225.0,
-          "ma15": 1845.09,
-          "bias_pct": 20.59,
-          "recent_high": 2025.0,
-          "atr14": 134.65,
-          "signal_low": 2075.0,
-          "as_of": "2026-08-27",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 12.75,
-          "revenue_yoy_pct": 17.07,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": true
-        },
-        {
-          "ticker": "8358.TWO",
-          "name": "金居",
-          "close": 494.0,
-          "high": 493.5,
-          "ma15": 415.43,
-          "bias_pct": 18.91,
-          "recent_high": 456.5,
-          "atr14": 33.6,
-          "signal_low": 446.0,
-          "as_of": "2026-08-27",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 4.82,
-          "revenue_yoy_pct": 54.87,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": null
-        },
-        {
-          "ticker": "6278.TW",
-          "name": "台表科",
-          "close": 206.0,
-          "high": 210.0,
-          "ma15": 177.43,
-          "bias_pct": 16.1,
-          "recent_high": 199.5,
-          "atr14": 11.55,
-          "signal_low": 197.5,
-          "as_of": "2026-08-27",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "光電業",
-          "revenue_mom_pct": 6.66,
-          "revenue_yoy_pct": 12.18,
-          "same_group_industry": null,
-          "has_block_trade": false
         }
       ]
     }
