@@ -1,6 +1,91 @@
 {
-  "generated_at": "2026-09-03 21:48:57",
+  "generated_at": "2026-09-04 21:48:46",
   "history": [
+    {
+      "date": "2026-09-04",
+      "generated_at": "2026-09-04 21:48:46",
+      "params": {
+        "atr_period": 14,
+        "atr_min_threshold": 8.0,
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 45857.66,
+          "ma15": 45668.33
+        },
+        "otc": {
+          "is_strong": true,
+          "close": 402.48,
+          "ma15": 396.18
+        }
+      },
+      "count": 3,
+      "results": [
+        {
+          "ticker": "3324.TWO",
+          "name": "雙鴻",
+          "close": 1485.0,
+          "high": 1485.0,
+          "ma15": 1145.6,
+          "bias_pct": 29.63,
+          "recent_high": 1465.0,
+          "atr14": 78.34,
+          "signal_low": 1410.0,
+          "as_of": "2026-09-04",
+          "market": "TPEX",
+          "revenue_month": "11507",
+          "industry": "其他電子業",
+          "revenue_mom_pct": 38.54,
+          "revenue_yoy_pct": 116.7,
+          "same_group_industry": null,
+          "has_block_trade": null
+        },
+        {
+          "ticker": "7711.TW",
+          "name": "永擎",
+          "close": 632.0,
+          "high": 632.0,
+          "ma15": 519.0,
+          "bias_pct": 21.77,
+          "recent_high": 625.0,
+          "atr14": 34.42,
+          "signal_low": 575.0,
+          "as_of": "2026-09-04",
+          "market": "TWSE",
+          "revenue_month": "11507",
+          "industry": "電腦及週邊設備業",
+          "revenue_mom_pct": 101.66,
+          "revenue_yoy_pct": 286.16,
+          "same_group_industry": "電腦及週邊設備業",
+          "has_block_trade": false
+        },
+        {
+          "ticker": "3231.TW",
+          "name": "緯創",
+          "close": 198.0,
+          "high": 200.0,
+          "ma15": 182.07,
+          "bias_pct": 8.75,
+          "recent_high": 196.0,
+          "atr14": 8.55,
+          "signal_low": 193.0,
+          "as_of": "2026-09-04",
+          "market": "TWSE",
+          "revenue_month": "11507",
+          "industry": "電腦及週邊設備業",
+          "revenue_mom_pct": -4.23,
+          "revenue_yoy_pct": 60.76,
+          "same_group_industry": "電腦及週邊設備業",
+          "has_block_trade": true
+        }
+      ]
+    },
     {
       "date": "2026-09-03",
       "generated_at": "2026-09-03 21:48:57",
@@ -490,148 +575,6 @@
           "revenue_yoy_pct": 44.53,
           "same_group_industry": null,
           "has_block_trade": true
-        }
-      ]
-    },
-    {
-      "date": "2026-08-29",
-      "generated_at": "2026-08-29 15:48:39",
-      "params": {
-        "atr_period": 14,
-        "atr_min_threshold": 8.0,
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 45975.22,
-          "ma15": 45293.93
-        },
-        "otc": {
-          "is_strong": true,
-          "close": 402.83,
-          "ma15": 394.53
-        }
-      },
-      "count": 6,
-      "results": [
-        {
-          "ticker": "3406.TW",
-          "name": "玉晶光",
-          "close": 917.0,
-          "high": 917.0,
-          "ma15": 672.2,
-          "bias_pct": 36.42,
-          "recent_high": 834.0,
-          "atr14": 47.05,
-          "signal_low": 831.0,
-          "as_of": "2026-08-28",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "光電業",
-          "revenue_mom_pct": 39.28,
-          "revenue_yoy_pct": 1.63,
-          "same_group_industry": "光電業",
-          "has_block_trade": false
-        },
-        {
-          "ticker": "3008.TW",
-          "name": "大立光",
-          "close": 7065.0,
-          "high": 7270.0,
-          "ma15": 5393.28,
-          "bias_pct": 31.0,
-          "recent_high": 6915.0,
-          "atr14": 368.98,
-          "signal_low": 6865.0,
-          "as_of": "2026-08-28",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "光電業",
-          "revenue_mom_pct": 31.39,
-          "revenue_yoy_pct": -10.66,
-          "same_group_industry": "光電業",
-          "has_block_trade": true
-        },
-        {
-          "ticker": "6933.TW",
-          "name": "AMAX-KY",
-          "close": 260.0,
-          "high": 260.0,
-          "ma15": 200.17,
-          "bias_pct": 29.89,
-          "recent_high": 236.5,
-          "atr14": 12.87,
-          "signal_low": 256.0,
-          "as_of": "2026-08-28",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電腦及週邊設備業",
-          "revenue_mom_pct": 1.63,
-          "revenue_yoy_pct": 197.35,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6805.TW",
-          "name": "富世達",
-          "close": 2345.0,
-          "high": 2435.0,
-          "ma15": 1890.86,
-          "bias_pct": 24.02,
-          "recent_high": 2225.0,
-          "atr14": 140.03,
-          "signal_low": 2255.0,
-          "as_of": "2026-08-28",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 12.75,
-          "revenue_yoy_pct": 17.07,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": true
-        },
-        {
-          "ticker": "7788.TW",
-          "name": "松川精密",
-          "close": 327.5,
-          "high": 327.5,
-          "ma15": 267.97,
-          "bias_pct": 22.22,
-          "recent_high": 300.0,
-          "atr14": 18.91,
-          "signal_low": 305.0,
-          "as_of": "2026-08-28",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 19.09,
-          "revenue_yoy_pct": 99.38,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": true
-        },
-        {
-          "ticker": "3374.TWO",
-          "name": "精材",
-          "close": 386.0,
-          "high": 386.0,
-          "ma15": 322.87,
-          "bias_pct": 19.55,
-          "recent_high": 362.5,
-          "atr14": 26.87,
-          "signal_low": 350.0,
-          "as_of": "2026-08-28",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": 12.68,
-          "revenue_yoy_pct": 30.96,
-          "same_group_industry": null,
-          "has_block_trade": null
         }
       ]
     }
