@@ -357,7 +357,7 @@ def run_coordinated_simulation(all_stock_data: dict, master_dates: list[str], du
                                    date_key, c, "停利(連續2天未創高)")
                     to_remove.append(ticker); continue
                 if pos["trailing_low_level"] is not None and l < pos["trailing_low_level"]:
-                    _record_trade(trades, ticker, all_stock_data[ticker]["market"], pos,
+                    _record_trade(trades, ticker, all_stock_data[ticker]["market"], variant, pos,
                                    date_key, c, "停利(跌破前K棒)")
                     to_remove.append(ticker); continue
 
