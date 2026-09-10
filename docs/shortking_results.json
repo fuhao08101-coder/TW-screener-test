@@ -1,6 +1,33 @@
 {
-  "generated_at": "2026-09-10 08:58:15",
+  "generated_at": "2026-09-11 01:11:52",
   "history": [
+    {
+      "date": "2026-09-11",
+      "generated_at": "2026-09-11 01:11:52",
+      "params": {
+        "atr_period": 14,
+        "atr_min_threshold": 8.0,
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 47183.36,
+          "ma15": 46099.68
+        },
+        "otc": {
+          "is_strong": true,
+          "close": 405.24,
+          "ma15": 400.58
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-09-10",
       "generated_at": "2026-09-10 08:58:15",
@@ -319,72 +346,6 @@
           "revenue_yoy_pct": 60.76,
           "same_group_industry": "電腦及週邊設備業",
           "has_block_trade": true
-        }
-      ]
-    },
-    {
-      "date": "2026-09-03",
-      "generated_at": "2026-09-03 21:48:57",
-      "params": {
-        "atr_period": 14,
-        "atr_min_threshold": 8.0,
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 46164.72,
-          "ma15": 45679.25
-        },
-        "otc": {
-          "is_strong": false,
-          "close": 395.25,
-          "ma15": 396.08
-        }
-      },
-      "count": 2,
-      "results": [
-        {
-          "ticker": "2464.TW",
-          "name": "盟立",
-          "close": 222.0,
-          "high": 222.0,
-          "ma15": 190.19,
-          "bias_pct": 16.73,
-          "recent_high": 215.95,
-          "atr14": 15.25,
-          "signal_low": 214.0,
-          "as_of": "2026-09-03",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "其他電子業",
-          "revenue_mom_pct": 6.2,
-          "revenue_yoy_pct": 62.1,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "7730.TW",
-          "name": "暉盛-創",
-          "close": 188.0,
-          "high": 188.0,
-          "ma15": 166.82,
-          "bias_pct": 12.7,
-          "recent_high": 181.0,
-          "atr14": 8.65,
-          "signal_low": 173.0,
-          "as_of": "2026-09-03",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": -18.76,
-          "revenue_yoy_pct": 44.04,
-          "same_group_industry": null,
-          "has_block_trade": false
         }
       ]
     }
