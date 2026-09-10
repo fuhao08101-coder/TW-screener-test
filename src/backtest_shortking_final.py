@@ -11,7 +11,7 @@
      才合格(不是現行的「雙買後沒雙賣就合格」,是要求先經歷雙賣、才算反轉)
   7. 每日只取乖離最大的前3名
   8. 隨時3%啟動防守:不用等滿6天,獲利隨時到3%就立刻進入移動防守
-  9. 連續3天未創新高才全部出場(從現行的2天延後為3天)
+  9. 連續2天未創新高才全部出場(T+2,這是已驗證過的最佳版本用的門檻,維持不變)
   10. 其餘出場規則不變:跌破訊號日低點停損、跌破15MA停損、跌破前一根K棒低點停利
 複利成長,計算資金曲線從歷史高點回落的最大百分比。這是簡化模型,用來比較
 四組的相對回撤差異,不是精確的真實資金回撤金額。
@@ -501,9 +501,9 @@ def run_backtest(start_date: date, end_date: date, max_stocks: int | None = None
     master_dates = sorted(all_dates)
     print(f"共同交易日曆:{len(master_dates)} 天")
 
-    print("\n模擬 最終版本(雙賣反轉+3天觸發)...")
+    print("\n模擬 雙賣反轉+T2觸發(2天未創高)...")
     trades = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_reverse,
-                                         "最終版本(雙賣反轉+3天觸發)", stall_days_limit=3)
+                                         "雙賣反轉+T2觸發", stall_days_limit=2)
     print(f"產生 {len(trades)} 筆交易")
 
     return trades
@@ -599,10 +599,10 @@ def print_monthly_breakdown(trades: list[dict], variant: str, start_date: date, 
 
 def print_full_report(all_trades: list[dict], start_date: date, end_date: date):
     print("\n" + "=" * 70)
-    print(f"最終版本完整驗證(雙賣反轉+3天觸發)({start_date}~{end_date})")
+    print(f"雙賣反轉+T2觸發 完整驗證({start_date}~{end_date})")
     print("=" * 70)
 
-    for variant in ["最終版本(雙賣反轉+3天觸發)"]:
+    for variant in ["雙賣反轉+T2觸發"]:
         v_trades = [t for t in all_trades if t["variant"] == variant]
         print(f"\n{'=' * 50}")
         print(f"【{variant}】")
@@ -623,7 +623,7 @@ def print_full_report(all_trades: list[dict], start_date: date, end_date: date):
     print("\n" + "=" * 70)
     print("A vs B 快速對照")
     print("=" * 70)
-    for variant in ["最終版本(雙賣反轉+3天觸發)"]:
+    for variant in ["雙賣反轉+T2觸發"]:
         v_trades = [t for t in all_trades if t["variant"] == variant]
         if not v_trades:
             continue
