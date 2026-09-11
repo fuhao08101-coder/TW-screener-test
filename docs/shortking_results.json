@@ -1,6 +1,33 @@
 {
-  "generated_at": "2026-09-11 01:11:52",
+  "generated_at": "2026-09-12 01:10:45",
   "history": [
+    {
+      "date": "2026-09-12",
+      "generated_at": "2026-09-12 01:10:45",
+      "params": {
+        "atr_period": 14,
+        "atr_min_threshold": 8.0,
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 46940.49,
+          "ma15": 46233.46
+        },
+        "otc": {
+          "is_strong": false,
+          "close": 395.52,
+          "ma15": 401.13
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-09-11",
       "generated_at": "2026-09-11 01:11:52",
@@ -261,91 +288,6 @@
           "revenue_yoy_pct": 198.45,
           "same_group_industry": null,
           "has_block_trade": null
-        }
-      ]
-    },
-    {
-      "date": "2026-09-04",
-      "generated_at": "2026-09-04 21:48:46",
-      "params": {
-        "atr_period": 14,
-        "atr_min_threshold": 8.0,
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 45857.66,
-          "ma15": 45668.33
-        },
-        "otc": {
-          "is_strong": true,
-          "close": 402.48,
-          "ma15": 396.18
-        }
-      },
-      "count": 3,
-      "results": [
-        {
-          "ticker": "3324.TWO",
-          "name": "雙鴻",
-          "close": 1485.0,
-          "high": 1485.0,
-          "ma15": 1145.6,
-          "bias_pct": 29.63,
-          "recent_high": 1465.0,
-          "atr14": 78.34,
-          "signal_low": 1410.0,
-          "as_of": "2026-09-04",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "其他電子業",
-          "revenue_mom_pct": 38.54,
-          "revenue_yoy_pct": 116.7,
-          "same_group_industry": null,
-          "has_block_trade": null
-        },
-        {
-          "ticker": "7711.TW",
-          "name": "永擎",
-          "close": 632.0,
-          "high": 632.0,
-          "ma15": 519.0,
-          "bias_pct": 21.77,
-          "recent_high": 625.0,
-          "atr14": 34.42,
-          "signal_low": 575.0,
-          "as_of": "2026-09-04",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電腦及週邊設備業",
-          "revenue_mom_pct": 101.66,
-          "revenue_yoy_pct": 286.16,
-          "same_group_industry": "電腦及週邊設備業",
-          "has_block_trade": false
-        },
-        {
-          "ticker": "3231.TW",
-          "name": "緯創",
-          "close": 198.0,
-          "high": 200.0,
-          "ma15": 182.07,
-          "bias_pct": 8.75,
-          "recent_high": 196.0,
-          "atr14": 8.55,
-          "signal_low": 193.0,
-          "as_of": "2026-09-04",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電腦及週邊設備業",
-          "revenue_mom_pct": -4.23,
-          "revenue_yoy_pct": 60.76,
-          "same_group_industry": "電腦及週邊設備業",
-          "has_block_trade": true
         }
       ]
     }
