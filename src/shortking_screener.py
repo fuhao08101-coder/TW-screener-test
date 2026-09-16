@@ -1,23 +1,22 @@
 """
-短線王(APP上市版:組合C + 大盤濾網 + 外資融資雙買 + 每日前6名乖離)篩選器。
+短線王(APP上市版:組合J + 大盤濾網 + 純外資融資雙買 + 每日前6名乖離)篩選器。
 適合短線/權證操作的進場訊號,已通過牛熊市回測驗證。
 
 篩選條件(當天同時符合,收盤價直接進場):
-  1. ATR14絕對值 >= 8
-  2. 收盤 > 15MA
-  3. 15MA乖離 >= 5%(已從8%調整,見下方回測紀錄說明)
-  4. 收盤 > 近5個交易日最高點(用收盤價確認突破,不是盤中)
-  5. 大盤環境濾網:上市看加權指數(^TWII)15MA、上櫃看櫃買指數(官方報表)15MA,各自把關
-  6. 外資融資雙買濾網:近9個交易日內同天雙買過(外資買超+融資增加同一天),
-     且雙買之後沒有出現過同天雙減
-  7. 當天通過以上所有條件的候選股,只取「15MA乖離最高的前6名」
+  1. 收盤 > 15MA
+  2. 15MA乖離 >= 5%
+  3. 收盤 > 近5個交易日最高點(用收盤價確認突破,不是盤中)
+  4. 大盤環境濾網:上市看加權指數(^TWII)15MA、上櫃看櫃買指數(官方報表)15MA,各自把關
+  5. 外資融資純雙買濾網:近5個交易日內出現過「外資買超+融資增加同一天」就合格,
+     不管之後有沒有出現雙賣(已拿掉舊版「雙賣就排除」的限制)
+  6. 當天通過以上所有條件的候選股,只取「15MA乖離最高的前6名」
 
-回測驗證紀錄(乖離門檻三方比較,全市場):
-  順風期(2025.08-2026.07):8%期望值+2.18%(776筆) / 5%+2.19%(855筆) / 無限制+2.18%(924筆)
-  逆風期(2022.02-2023.02):8%期望值+1.52%(109筆) / 5%+1.42%(164筆) / 無限制+1.19%(222筆)
-  結論:順風時三者幾乎打平,但逆風時乖離門檻越嚴格表現越穩定(無限制版逆風掉最多)。
-  5%是折衷方案:順風/逆風期望值都非常接近8%版本,但交易筆數明顯更多,
-  走中庸之道,故正式採用5%,不採用完全無限制。
+【已拿掉ATR14波動度門檻】經回測驗證(ATR濾網 × 雙買窗口天數,4組對照):
+  拿掉ATR、雙買窗口縮短為5天且不管雙賣,是四組裡綜合表現最佳的版本:
+    順風期(2025.08-2026.07):期望值+2.88%(616筆)
+    逆風期(2022.02-2023.02):期望值+1.52%(351筆),MDD 57.17%(四組最低),
+      最長連續虧損2個月(比原本ATR版本的6個月大幅改善)
+  故正式拿掉ATR14門檻,雙買濾網窗口從9天縮短為5天且不再檢查雙賣。
 
 排序:依15MA乖離率由大到小排序(用來決定前6名)。
 
@@ -32,8 +31,6 @@ import yfinance as yf
 
 from institutional_flow import build_pure_dualbuy_qualified_set
 
-ATR_PERIOD = 14
-ATR_MIN_THRESHOLD = 8.0
 SHORT_MA_PERIOD = 15
 BIAS_MIN_THRESHOLD = 5.0  # 已回測驗證:5%走中庸之道,順風/逆風期望值都接近8%版本,
                           # 但交易筆數明顯更多(順風855 vs 776筆、逆風164 vs 109筆)
@@ -47,16 +44,6 @@ INDEX_HISTORY_DAYS = 90        # 即時掃描只需要近況,抓3個月夠算15M
 HISTORY_PERIOD = "1y"
 BATCH_SIZE = 150
 BATCH_SLEEP = 1.0
-
-
-def _calc_atr(df: pd.DataFrame, period: int) -> pd.Series:
-    high = df["High"]
-    low = df["Low"]
-    prev_close = df["Close"].shift(1)
-    tr = pd.concat([
-        (high - low), (high - prev_close).abs(), (low - prev_close).abs(),
-    ], axis=1).max(axis=1)
-    return tr.ewm(alpha=1 / period, adjust=False).mean()
 
 
 def _fetch_otc_index_official(months_back: int = 4) -> dict | None:
@@ -82,7 +69,8 @@ def _fetch_otc_index_official(months_back: int = 4) -> dict | None:
 
         for attempt in range(1, 4):
             try:
-                r = requests.get(url, headers=headers, params={"l": "zh-tw", "d": date_param}, timeout=20)
+                r = requests.get(url, headers=headers, params={"l": "zh-tw", "d": date_param},
+                                  timeout=20, verify=False)
                 if r.status_code == 200:
                     payload = r.json()
                     tables = payload.get("tables") or []
@@ -183,7 +171,7 @@ def fetch_market_regime() -> dict:
 
 
 def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
-    min_len = max(SHORT_MA_PERIOD, ATR_PERIOD, BREAKOUT_LOOKBACK_DAYS) + 20
+    min_len = max(SHORT_MA_PERIOD, BREAKOUT_LOOKBACK_DAYS) + 20
     if df is None or df.empty or len(df) < min_len:
         return None
 
@@ -194,14 +182,12 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
 
     ma15 = close.rolling(SHORT_MA_PERIOD).mean()
     bias = (close - ma15) / ma15 * 100.0
-    atr = _calc_atr(df, ATR_PERIOD)
     recent_high = high.rolling(BREAKOUT_LOOKBACK_DAYS).max().shift(1)
 
     latest_close = close.iloc[-1]
     latest_high = high.iloc[-1]
     latest_ma15 = ma15.iloc[-1]
     latest_bias = bias.iloc[-1]
-    latest_atr = atr.iloc[-1]
     latest_recent_high = recent_high.iloc[-1]
 
     if pd.isna(latest_ma15) or latest_close <= latest_ma15:
@@ -219,7 +205,6 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         "ma15": round(float(latest_ma15), 2),
         "bias_pct": round(float(latest_bias), 2),
         "recent_high": round(float(latest_recent_high), 2),
-        "atr14": round(float(latest_atr), 2),
         "signal_low": round(float(df["Low"].iloc[-1]), 2),
         "as_of": close.index[-1].strftime("%Y-%m-%d"),
     }
@@ -254,8 +239,8 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
     """回傳 (results, market_regime)"""
     market_regime = fetch_market_regime()
 
-  print("抓取外資融資純雙買資料(近5個交易日,不論雙賣,上市+上櫃)...")
-dual_buy_qualified = build_pure_dualbuy_qualified_set(n_days=5)
+    print("抓取外資融資純雙買資料(近5個交易日,不論雙賣,上市+上櫃)...")
+    dual_buy_qualified = build_pure_dualbuy_qualified_set(n_days=5)
 
     results = []
     total = len(universe)
@@ -281,7 +266,7 @@ dual_buy_qualified = build_pure_dualbuy_qualified_set(n_days=5)
             if regime is not None and not regime["is_strong"]:
                 continue
 
-            # 外資融資雙買濾網
+            # 外資融資純雙買濾網
             code = t.replace(".TWO", "").replace(".TW", "")
             if code not in dual_buy_qualified:
                 continue
