@@ -1,28 +1,30 @@
 """
-防守機制 × 雙買規則,4組完整對照回測,加上整體資金曲線最大回撤(MDD)計算。
+ATR濾網 × 雙買窗口天數,4組完整對照回測,加上整體資金曲線最大回撤(MDD)計算。
 
-兩個獨立維度,交叉組合成4組:
+固定使用已驗證過最好的防守機制:收盤判斷(不是盤中觸價)+ 防守線設在前一天低點
++ 連續2天未創高全部出場(T+2)。這次只測試進場端的兩個變因:
 
-【維度1:防守機制】
-  原本(收盤判斷):達標/創新高用收盤價判斷,防守線設在「前一天」低點
-  盤中觸價(新):達標/創新高用當天最高價判斷(模擬盤中觸價),
-    防守線設在「當天自己」的低點
+【維度1:ATR14波動度濾網】
+  有ATR:維持現行,ATR14絕對值 >= 8 也要符合
+  無ATR:拿掉這道門檻,只看收盤>15MA、乖離>=5%、突破5日高點
 
-【維度2:雙買濾網】
-  現行雙買:9天內雙買過,之後沒出現過雙賣,就合格
-  雙賣反轉:9天內先出現雙賣,雙賣之後3天內出現雙買反轉,才合格
+【維度2:雙買濾網窗口與嚴格度】
+  現行雙買(9天,雙買後無雙賣):9天內雙買過,之後沒出現過雙賣,才合格
+  純雙買9天(不管雙賣):9天內只要出現過雙買,就合格,不管之後有沒有雙賣
+  純雙買5天(不管雙賣):窗口縮短為5天,一樣不管雙賣
 
 四組組合:
-  A_原本收盤+現行雙買(=最早驗證過+2.11%/+1.30%的基準版本)
-  E_盤中觸價+現行雙買(這次的防守機制修正,單獨測試)
-  F_原本收盤+雙賣反轉(雙賣反轉單獨測試,之前已測過T+2版本)
-  G_盤中觸價+雙賣反轉(兩個修正疊加)
+  A_基準(有ATR+現行雙買):現行正式版規則,當基準對照
+  H_無ATR+純雙買9天:拿掉ATR,雙買濾網放寬成純9天雙買
+  I_有ATR+純雙買5天:保留ATR,雙買濾網縮短成5天且不管雙賣
+  J_無ATR+純雙買5天:兩個放寬同時套用
 
-兩兩共用:訊號日低點停損、跌破15MA停損、6天3%時間停損(固定用收盤價判斷,
-不受防守機制維度影響)、連續2天未創高全部出場、跌破防守線隨時觸發停利出場。
+由於只打前3名,訊號變多不會造成選股爆量的問題,這次驗證重點是:
+放寬進場條件後,能不能在「維持前3名品質」的前提下,提升交易機會、
+甚至提升期望值(抓到更多剛啟動就噴出的股票)。
 
-其餘規則固定不變:ATR14>=8、收盤>15MA、乖離>=5%、收盤>近5日高點、
-大盤環境濾網、每日只取乖離最大的前3名。
+其餘規則固定不變:收盤>15MA、乖離>=5%、收盤>近5日高點、大盤環境濾網、
+每日只取乖離最大的前3名。
 
 MDD計算方式:把所有交易依出場日期排序,模擬資金從1.0開始,每筆交易依報酬率
 複利成長,計算資金曲線從歷史高點回落的最大百分比。這是簡化模型,用來比較
@@ -217,6 +219,25 @@ def build_dualbuy_qualified_by_day(flow_history: list) -> dict:
     return qualified_by_day
 
 
+def build_pure_dualbuy_qualified_by_day(flow_history: list, window_days: int) -> dict:
+    """
+    新規則:近window_days天內,只要出現過「外資買超+融資增加同一天」,就合格,
+    不管之後有沒有出現雙賣(拿掉「雙賣就排除」這個限制,單純放寬)。
+    """
+    qualified_by_day = {}
+    for i, (d, _, _) in enumerate(flow_history):
+        date_key = d.strftime("%Y-%m-%d")
+        window = flow_history[max(0, i - window_days + 1):i + 1]
+
+        qualified = set()
+        for _, fm, mm in window:
+            for code in fm:
+                if fm.get(code, 0) > 0 and mm.get(code, 0) > 0:
+                    qualified.add(code)
+        qualified_by_day[date_key] = qualified
+    return qualified_by_day
+
+
 DUAL_SELL_LOOKBACK_DAYS = 9   # 雙賣要發生在近9天內
 DUAL_BUY_AFTER_SELL_DAYS = 3  # 雙賣之後,3天內要看到雙買反轉
 
@@ -319,10 +340,11 @@ def prepare_stock_series(df: pd.DataFrame, market: str, twse_regime: dict, otc_r
     atr = _calc_atr(df, ATR_PERIOD)
     recent_high = high.rolling(BREAKOUT_LOOKBACK_DAYS).max().shift(1)
 
-    base_signal = (
-        (close > ma15) & (atr >= ATR_MIN_THRESHOLD) &
-        (bias >= BIAS_MIN_THRESHOLD) & (close > recent_high)
-    ).fillna(False)
+    # 同時算出「有ATR條件」跟「無ATR條件」兩種訊號,存起來給4組變體共用,
+    # 不用重複處理股價資料
+    base_cond_common = (close > ma15) & (bias >= BIAS_MIN_THRESHOLD) & (close > recent_high)
+    signal_with_atr = (base_cond_common & (atr >= ATR_MIN_THRESHOLD)).fillna(False)
+    signal_without_atr = base_cond_common.fillna(False)
 
     regime_map = twse_regime if market == "TWSE" else otc_regime
 
@@ -333,28 +355,30 @@ def prepare_stock_series(df: pd.DataFrame, market: str, twse_regime: dict, otc_r
             continue
         date_key = dt.strftime("%Y-%m-%d")
         idx_ok = regime_map.get(date_key, False)
-        entry_ok = bool(base_signal.loc[dt]) and idx_ok
+        entry_ok_with_atr = bool(signal_with_atr.loc[dt]) and idx_ok
+        entry_ok_without_atr = bool(signal_without_atr.loc[dt]) and idx_ok
         result[date_key] = {
             "close": float(close.loc[dt]),
             "high": float(high.loc[dt]) if not pd.isna(high.loc[dt]) else float(close.loc[dt]),
             "low": float(low.loc[dt]),
             "ma15": float(ma15.loc[dt]) if not pd.isna(ma15.loc[dt]) else None,
             "bias": float(bias.loc[dt]) if not pd.isna(bias.loc[dt]) else None,
-            "entry_signal": entry_ok,
+            "entry_signal_with_atr": entry_ok_with_atr,
+            "entry_signal_without_atr": entry_ok_without_atr,
         }
     return result if result else None
 
 
 def run_coordinated_simulation(all_stock_data: dict, master_dates: list[str], dualbuy_by_day: dict,
-                                variant: str, stall_days_limit: int, intraday_mode: bool) -> list[dict]:
+                                variant: str, stall_days_limit: int, intraday_mode: bool,
+                                use_atr: bool) -> list[dict]:
     """
-    intraday_mode 決定用哪一種防守機制:
-      False(原本版本,A組基準):用「收盤價」判斷達標/創新高,防守線設在「前一天」低點
-      True(這次修正版,E組):用「當天最高價」判斷達標/創新高(模擬盤中觸價),
-        防守線設在「當天自己」的最低價
-    兩者共用:訊號日低點停損、跌破15MA停損、6天3%時間停損、連續N天未創高全部出場、
-    跌破防守線隨時觸發停利,這些規則完全一樣,只有「達標/創新高判斷依據」跟
-    「防守線基準點」這兩處不同。
+    intraday_mode 決定用哪一種防守機制(這次固定用False,已驗證A組收盤判斷更好):
+      False:用「收盤價」判斷達標/創新高,防守線設在「前一天」低點
+      True:用「當天最高價」判斷達標/創新高,防守線設在「當天自己」的最低價
+    use_atr 決定進場條件要不要包含ATR14門檻:
+      True:維持現行,ATR14絕對值 >= 8 也要符合
+      False:拿掉ATR這道門檻,只看收盤>15MA、乖離>=5%、突破5日高點
     """
     trades = []
     positions = {}
@@ -426,12 +450,13 @@ def run_coordinated_simulation(all_stock_data: dict, master_dates: list[str], du
             del positions[t]
 
         dualbuy_set = dualbuy_by_day.get(date_key, set())
+        signal_field = "entry_signal_with_atr" if use_atr else "entry_signal_without_atr"
         candidates = []
         for ticker, data in all_stock_data.items():
             if ticker in positions:
                 continue
             info = data["series"].get(date_key)
-            if info is None or not info["entry_signal"]:
+            if info is None or not info[signal_field]:
                 continue
             code = ticker.replace(".TWO", "").replace(".TW", "")
             if code not in dualbuy_set:
@@ -478,10 +503,12 @@ def run_backtest(start_date: date, end_date: date, max_stocks: int | None = None
     if len(flow_history) < 10:
         print("❌ 外資融資歷史資料太少,提早中止。")
         return []
-    print("建立現行雙買濾網判斷...")
+    print("建立現行雙買濾網判斷(9天,雙買後無雙賣)...")
     dualbuy_current = build_dualbuy_qualified_by_day(flow_history)
-    print("建立雙賣反轉雙買濾網判斷(9天內雙賣過,之後3天內雙買反轉)...")
-    dualbuy_reverse = build_dualreverse_qualified_by_day(flow_history)
+    print("建立純雙買判斷(9天內雙買過即可,不管雙賣)...")
+    dualbuy_pure_9d = build_pure_dualbuy_qualified_by_day(flow_history, window_days=9)
+    print("建立純雙買判斷(5天內雙買過即可,不管雙賣)...")
+    dualbuy_pure_5d = build_pure_dualbuy_qualified_by_day(flow_history, window_days=5)
 
     print("抓取股票清單...")
     universe = get_universe(include_otc=True)
@@ -525,33 +552,33 @@ def run_backtest(start_date: date, end_date: date, max_stocks: int | None = None
 
     all_trades = []
 
-    print("\n模擬 A_原本收盤+現行雙買...")
+    print("\n模擬 A_基準(有ATR+現行雙買9天無雙賣)...")
     trades_a = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_current,
-                                           "A_原本收盤+現行雙買", stall_days_limit=2,
-                                           intraday_mode=False)
+                                           "A_基準(有ATR+現行雙買)", stall_days_limit=2,
+                                           intraday_mode=False, use_atr=True)
     print(f"產生 {len(trades_a)} 筆交易")
     all_trades += trades_a
 
-    print("\n模擬 E_盤中觸價+現行雙買...")
-    trades_e = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_current,
-                                           "E_盤中觸價+現行雙買", stall_days_limit=2,
-                                           intraday_mode=True)
-    print(f"產生 {len(trades_e)} 筆交易")
-    all_trades += trades_e
+    print("\n模擬 H_無ATR+純雙買9天...")
+    trades_h = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_pure_9d,
+                                           "H_無ATR+純雙買9天", stall_days_limit=2,
+                                           intraday_mode=False, use_atr=False)
+    print(f"產生 {len(trades_h)} 筆交易")
+    all_trades += trades_h
 
-    print("\n模擬 F_原本收盤+雙賣反轉...")
-    trades_f = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_reverse,
-                                           "F_原本收盤+雙賣反轉", stall_days_limit=2,
-                                           intraday_mode=False)
-    print(f"產生 {len(trades_f)} 筆交易")
-    all_trades += trades_f
+    print("\n模擬 I_有ATR+純雙買5天...")
+    trades_i = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_pure_5d,
+                                           "I_有ATR+純雙買5天", stall_days_limit=2,
+                                           intraday_mode=False, use_atr=True)
+    print(f"產生 {len(trades_i)} 筆交易")
+    all_trades += trades_i
 
-    print("\n模擬 G_盤中觸價+雙賣反轉...")
-    trades_g = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_reverse,
-                                           "G_盤中觸價+雙賣反轉", stall_days_limit=2,
-                                           intraday_mode=True)
-    print(f"產生 {len(trades_g)} 筆交易")
-    all_trades += trades_g
+    print("\n模擬 J_無ATR+純雙買5天...")
+    trades_j = run_coordinated_simulation(all_stock_data, master_dates, dualbuy_pure_5d,
+                                           "J_無ATR+純雙買5天", stall_days_limit=2,
+                                           intraday_mode=False, use_atr=False)
+    print(f"產生 {len(trades_j)} 筆交易")
+    all_trades += trades_j
 
     return all_trades
 
@@ -646,10 +673,10 @@ def print_monthly_breakdown(trades: list[dict], variant: str, start_date: date, 
 
 def print_full_report(all_trades: list[dict], start_date: date, end_date: date):
     print("\n" + "=" * 70)
-    print(f"防守機制 × 雙買規則,4組完整對照({start_date}~{end_date})")
+    print(f"ATR濾網 × 雙買窗口天數,4組完整對照({start_date}~{end_date})")
     print("=" * 70)
 
-    for variant in ["A_原本收盤+現行雙買", "E_盤中觸價+現行雙買", "F_原本收盤+雙賣反轉", "G_盤中觸價+雙賣反轉"]:
+    for variant in ["A_基準(有ATR+現行雙買)", "H_無ATR+純雙買9天", "I_有ATR+純雙買5天", "J_無ATR+純雙買5天"]:
         v_trades = [t for t in all_trades if t["variant"] == variant]
         print(f"\n{'=' * 50}")
         print(f"【{variant}】")
@@ -668,9 +695,9 @@ def print_full_report(all_trades: list[dict], start_date: date, end_date: date):
         print_monthly_breakdown(v_trades, variant, start_date, end_date)
 
     print("\n" + "=" * 70)
-    print("4組快速對照(A/E/F/G)")
+    print("4組快速對照(A/H/I/J)")
     print("=" * 70)
-    for variant in ["A_原本收盤+現行雙買", "E_盤中觸價+現行雙買", "F_原本收盤+雙賣反轉", "G_盤中觸價+雙賣反轉"]:
+    for variant in ["A_基準(有ATR+現行雙買)", "H_無ATR+純雙買9天", "I_有ATR+純雙買5天", "J_無ATR+純雙買5天"]:
         v_trades = [t for t in all_trades if t["variant"] == variant]
         if not v_trades:
             continue
