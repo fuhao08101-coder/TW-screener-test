@@ -294,3 +294,26 @@ def build_dual_buy_qualified_set(n_days: int = LOOKBACK_TRADING_DAYS) -> set[str
 
     print(f"外資融資雙買濾網:合格 {len(qualified)} 檔(上市+上櫃)")
     return qualified
+def build_pure_dualbuy_qualified_set(n_days: int = 5) -> set[str]:
+    """
+    J版本(已回測驗證,順風+2.88%/855筆、逆風+1.52%/351筆,MDD跟連續虧損月數
+    都是四組對照裡最佳):近n_days個交易日內,只要出現過「外資買超+融資增加
+    同一天」,就合格,不管之後有沒有出現雙賣(拿掉舊版「雙賣就排除」的限制)。
+    預設5天,不是舊版的9天。
+    """
+    print(f"抓取近{n_days}個交易日的外資+融資資料(上市+上櫃)...")
+    daily_data = _fetch_recent_trading_days_data(n_days)
+    if len(daily_data) < 2:
+        print("[warn] 外資/融資資料抓取失敗或資料太少,這個濾網這次會讓所有股票被排除")
+        return set()
+    print(f"實際取得 {len(daily_data)} 個交易日的資料:{[d[0] for d in daily_data]}")
+
+    qualified: set[str] = set()
+    for _, foreign_map, margin_map in daily_data:
+        for code in foreign_map:
+            if foreign_map.get(code, 0) > 0 and margin_map.get(code, 0) > 0:
+                qualified.add(code)
+
+    print(f"純雙買濾網(近{n_days}天,不管雙賣):合格 {len(qualified)} 檔(上市+上櫃)")
+    return qualified
+
