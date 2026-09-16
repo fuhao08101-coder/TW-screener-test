@@ -30,7 +30,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
-from institutional_flow import build_dual_buy_qualified_set
+from institutional_flow import build_pure_dualbuy_qualified_set
 
 ATR_PERIOD = 14
 ATR_MIN_THRESHOLD = 8.0
@@ -208,8 +208,6 @@ def _evaluate_from_df(df: pd.DataFrame, ticker: str, name: str) -> dict | None:
         return None
     if pd.isna(latest_bias) or latest_bias < BIAS_MIN_THRESHOLD:
         return None
-    if pd.isna(latest_atr) or latest_atr < ATR_MIN_THRESHOLD:
-        return None
     if pd.isna(latest_recent_high) or latest_close <= latest_recent_high:
         return None
 
@@ -256,8 +254,8 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
     """回傳 (results, market_regime)"""
     market_regime = fetch_market_regime()
 
-    print("抓取外資融資雙買資料(近9個交易日,上市+上櫃)...")
-    dual_buy_qualified = build_dual_buy_qualified_set()
+  print("抓取外資融資純雙買資料(近5個交易日,不論雙賣,上市+上櫃)...")
+dual_buy_qualified = build_pure_dualbuy_qualified_set(n_days=5)
 
     results = []
     total = len(universe)
