@@ -1,6 +1,31 @@
 {
-  "generated_at": "2026-09-16 14:43:38",
+  "generated_at": "2026-09-17 01:46:20",
   "history": [
+    {
+      "date": "2026-09-17",
+      "generated_at": "2026-09-17 01:46:20",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": false,
+          "close": 45511.49,
+          "ma15": 46393.65
+        },
+        "otc": {
+          "is_strong": false,
+          "close": 399.21,
+          "ma15": 401.89
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-09-16",
       "generated_at": "2026-09-16 14:43:38",
@@ -106,148 +131,6 @@
       },
       "count": 0,
       "results": []
-    },
-    {
-      "date": "2026-09-10",
-      "generated_at": "2026-09-10 08:58:15",
-      "params": {
-        "atr_period": 14,
-        "atr_min_threshold": 8.0,
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 47105.78,
-          "ma15": 45935.41
-        },
-        "otc": {
-          "is_strong": true,
-          "close": 408.09,
-          "ma15": 399.56
-        }
-      },
-      "count": 6,
-      "results": [
-        {
-          "ticker": "8227.TWO",
-          "name": "巨有科技",
-          "close": 198.0,
-          "high": 198.0,
-          "ma15": 163.03,
-          "bias_pct": 21.45,
-          "recent_high": 180.0,
-          "atr14": 10.25,
-          "signal_low": 178.5,
-          "as_of": "2026-09-09",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": -17.58,
-          "revenue_yoy_pct": -13.54,
-          "same_group_industry": "半導體業",
-          "has_block_trade": null
-        },
-        {
-          "ticker": "3680.TWO",
-          "name": "家登",
-          "close": 566.0,
-          "high": 573.0,
-          "ma15": 502.93,
-          "bias_pct": 12.54,
-          "recent_high": 551.0,
-          "atr14": 27.67,
-          "signal_low": 563.0,
-          "as_of": "2026-09-09",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": 15.81,
-          "revenue_yoy_pct": 71.69,
-          "same_group_industry": "半導體業",
-          "has_block_trade": null
-        },
-        {
-          "ticker": "6739.TWO",
-          "name": "竹陞科技",
-          "close": 1200.0,
-          "high": 1215.0,
-          "ma15": 1081.73,
-          "bias_pct": 10.93,
-          "recent_high": 1170.0,
-          "atr14": 69.37,
-          "signal_low": 1150.0,
-          "as_of": "2026-09-09",
-          "market": "TPEX",
-          "revenue_month": "11507",
-          "industry": "其他電子業",
-          "revenue_mom_pct": 6.78,
-          "revenue_yoy_pct": 99.49,
-          "same_group_industry": "其他電子業",
-          "has_block_trade": null
-        },
-        {
-          "ticker": "6805.TW",
-          "name": "富世達",
-          "close": 2295.0,
-          "high": 2325.0,
-          "ma15": 2098.33,
-          "bias_pct": 9.37,
-          "recent_high": 2265.0,
-          "atr14": 139.3,
-          "signal_low": 2155.0,
-          "as_of": "2026-09-09",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 12.75,
-          "revenue_yoy_pct": 17.07,
-          "same_group_industry": null,
-          "has_block_trade": true
-        },
-        {
-          "ticker": "6531.TW",
-          "name": "愛普*",
-          "close": 999.0,
-          "high": 1015.0,
-          "ma15": 917.93,
-          "bias_pct": 8.83,
-          "recent_high": 995.0,
-          "atr14": 62.99,
-          "signal_low": 936.0,
-          "as_of": "2026-09-09",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "半導體業",
-          "revenue_mom_pct": 36.08,
-          "revenue_yoy_pct": 144.57,
-          "same_group_industry": "半導體業",
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6196.TW",
-          "name": "帆宣",
-          "close": 534.0,
-          "high": 538.0,
-          "ma15": 499.83,
-          "bias_pct": 6.84,
-          "recent_high": 528.0,
-          "atr14": 23.87,
-          "signal_low": 512.0,
-          "as_of": "2026-09-09",
-          "market": "TWSE",
-          "revenue_month": "11507",
-          "industry": "其他電子業",
-          "revenue_mom_pct": -1.02,
-          "revenue_yoy_pct": 101.35,
-          "same_group_industry": "其他電子業",
-          "has_block_trade": true
-        }
-      ]
     }
   ]
 }
