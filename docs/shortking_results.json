@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-18 01:47:23",
+  "generated_at": "2026-09-18 11:05:52",
   "history": [
     {
       "date": "2026-09-18",
-      "generated_at": "2026-09-18 01:47:23",
+      "generated_at": "2026-09-18 11:05:52",
       "params": {
         "short_ma": 15,
         "bias_min_threshold": 5.0,
@@ -14,8 +14,8 @@
       "market_regime": {
         "twse": {
           "is_strong": false,
-          "close": 45848.9,
-          "ma15": 46394.73
+          "close": 46288.0,
+          "ma15": 46415.59
         },
         "otc": {
           "is_strong": false,
