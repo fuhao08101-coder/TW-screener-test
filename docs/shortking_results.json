@@ -1,6 +1,140 @@
 {
-  "generated_at": "2026-09-21 10:21:05",
+  "generated_at": "2026-09-22 02:57:01",
   "history": [
+    {
+      "date": "2026-09-22",
+      "generated_at": "2026-09-22 02:57:01",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 47180.75,
+          "ma15": 46472.21
+        },
+        "otc": {
+          "is_strong": true,
+          "close": 412.57,
+          "ma15": 403.12
+        }
+      },
+      "count": 6,
+      "results": [
+        {
+          "ticker": "8227.TWO",
+          "name": "巨有科技",
+          "close": 287.5,
+          "high": 287.5,
+          "ma15": 215.0,
+          "bias_pct": 33.72,
+          "recent_high": 281.0,
+          "signal_low": 271.5,
+          "as_of": "2026-09-21",
+          "market": "TPEX",
+          "revenue_month": "11508",
+          "industry": "半導體業",
+          "revenue_mom_pct": 14.2,
+          "revenue_yoy_pct": 42.25,
+          "same_group_industry": "半導體業",
+          "has_block_trade": null
+        },
+        {
+          "ticker": "3605.TW",
+          "name": "宏致",
+          "close": 169.0,
+          "high": 169.0,
+          "ma15": 131.1,
+          "bias_pct": 28.91,
+          "recent_high": 154.0,
+          "signal_low": 151.0,
+          "as_of": "2026-09-21",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "電子零組件業",
+          "revenue_mom_pct": -4.94,
+          "revenue_yoy_pct": 17.24,
+          "same_group_industry": "電子零組件業",
+          "has_block_trade": false
+        },
+        {
+          "ticker": "6538.TWO",
+          "name": "倉和",
+          "close": 426.5,
+          "high": 426.5,
+          "ma15": 334.3,
+          "bias_pct": 27.58,
+          "recent_high": 398.5,
+          "signal_low": 400.0,
+          "as_of": "2026-09-21",
+          "market": "TPEX",
+          "revenue_month": "11508",
+          "industry": "電子零組件業",
+          "revenue_mom_pct": 6.81,
+          "revenue_yoy_pct": 55.67,
+          "same_group_industry": "電子零組件業",
+          "has_block_trade": null
+        },
+        {
+          "ticker": "6715.TW",
+          "name": "嘉基",
+          "close": 451.5,
+          "high": 475.0,
+          "ma15": 357.07,
+          "bias_pct": 26.45,
+          "recent_high": 433.0,
+          "signal_low": 433.0,
+          "as_of": "2026-09-21",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "電子零組件業",
+          "revenue_mom_pct": 6.63,
+          "revenue_yoy_pct": 113.02,
+          "same_group_industry": "電子零組件業",
+          "has_block_trade": false
+        },
+        {
+          "ticker": "3055.TW",
+          "name": "蔚華科",
+          "close": 188.0,
+          "high": 188.0,
+          "ma15": 152.03,
+          "bias_pct": 23.66,
+          "recent_high": 173.5,
+          "signal_low": 167.0,
+          "as_of": "2026-09-21",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "電子通路業",
+          "revenue_mom_pct": 14.06,
+          "revenue_yoy_pct": 108.24,
+          "same_group_industry": null,
+          "has_block_trade": false
+        },
+        {
+          "ticker": "3443.TW",
+          "name": "創意",
+          "close": 7615.0,
+          "high": 7755.0,
+          "ma15": 6235.67,
+          "bias_pct": 22.12,
+          "recent_high": 7150.0,
+          "signal_low": 7030.0,
+          "as_of": "2026-09-21",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "半導體業",
+          "revenue_mom_pct": 1.23,
+          "revenue_yoy_pct": 111.02,
+          "same_group_industry": "半導體業",
+          "has_block_trade": true
+        }
+      ]
+    },
     {
       "date": "2026-09-21",
       "generated_at": "2026-09-21 10:21:05",
@@ -188,31 +322,6 @@
     {
       "date": "2026-09-17",
       "generated_at": "2026-09-17 01:46:20",
-      "params": {
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": false,
-          "close": 45511.49,
-          "ma15": 46393.65
-        },
-        "otc": {
-          "is_strong": false,
-          "close": 399.21,
-          "ma15": 401.89
-        }
-      },
-      "count": 0,
-      "results": []
-    },
-    {
-      "date": "2026-09-16",
-      "generated_at": "2026-09-16 14:43:38",
       "params": {
         "short_ma": 15,
         "bias_min_threshold": 5.0,
