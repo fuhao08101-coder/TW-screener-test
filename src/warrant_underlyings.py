@@ -1,22 +1,33 @@
 """
 取得「目前有發行中權證的標的股票」代號集合。
 
-資料源:TWSE官方「上市權證基本資料」t187ap37_L
-  https://openapi.twse.com.tw/v1/opendata/t187ap37_L
+資料源(上市+上櫃都涵蓋):
+  上市:TWSE官方「上市權證基本資料」t187ap37_L
+    https://openapi.twse.com.tw/v1/opendata/t187ap37_L
+  上櫃:櫃買中心官方「上櫃權證基本資料」mopsfin_t187ap37_O(端點命名規律沿用
+    「同代碼、結尾_L換成_O」,這個規律在這個專案裡已經驗證過好幾次都適用)
+    https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap37_O
+
 已實測確認欄位:「標的證券/指數」存的是公司名稱(例如"AES-KY"),不是股票代號,
 所以要用 universe.py 的代號↔名稱對照表,反查回股票代號。
 
-權證的標的不一定是個股,也可能是指數(例如電子類指數),這種名稱在股票清單裡
-查不到是正常現象,會被歸類到「無法比對」,不會被誤判成某檔股票的權證。
+權證的標的不一定是個股,也可能是指數(例如電子類指數)或ETF,這種名稱在股票
+清單裡查不到是正常現象,會被歸類到「無法比對」,不會被誤判成某檔股票的權證。
+
+【已修正:之前只抓上市那份,導致標的是上櫃股票的權證完全查不到,不是這些
+股票真的沒有權證,是資料源本身漏了一半。現在合併上市+上櫃兩份資料。】
 
 用法:
     from warrant_underlyings import get_warrant_underlying_codes
-    codes = get_warrant_underlying_codes(universe)  # universe來自 get_universe()
+    codes, diag = get_warrant_underlying_codes(universe)  # universe來自 get_universe()
     # codes 是一個 set,裡面是目前有發行中權證的股票代號(4碼字串)
 """
+import time
 import requests
 
-URL = "https://openapi.twse.com.tw/v1/opendata/t187ap37_L"
+TWSE_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap37_L"
+TPEX_URL = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap37_O"
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -34,13 +45,38 @@ def _normalize_name(name: str) -> str:
     return name
 
 
+def _fetch_one_source(url: str, source_name: str, max_retries: int = 3) -> list[dict]:
+    """
+    抓取單一來源的權證資料。TPEX(櫃買中心)網域的SSL憑證缺少
+    「Subject Key Identifier」欄位,某些環境會導致SSL驗證失敗,
+    對這個網域的請求關閉SSL驗證(這是官方網站自己的憑證瑕疵,不是我們的問題,
+    這個專案裡已經遇過好幾次同樣的狀況)。
+    """
+    verify_ssl = "tpex.org.tw" not in url
+    if not verify_ssl:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=60, verify=verify_ssl)
+            if r.status_code == 200:
+                data = r.json()
+                print(f"  {source_name}: 成功取得 {len(data)} 檔權證")
+                return data
+        except Exception as e:
+            print(f"[warn] {source_name}第{attempt}次抓取失敗: {e}")
+        if attempt < max_retries:
+            time.sleep(3)
+    print(f"[warn] {source_name}抓取失敗,這部分資料會缺漏")
+    return []
+
+
 def get_warrant_underlying_codes(universe: list[dict], max_retries: int = 3) -> tuple[set, dict]:
     """
     回傳 (合格代號集合, 診斷資訊)
     診斷資訊包含:總權證檔數、成功比對到股票的檔數、比對不到的名稱清單(通常是指數,前20個當範例)
     """
-    import time
-
     # 建立「名稱 -> 代號」對照表(用universe.py既有的清單反查)
     name_to_code = {}
     for row in universe:
@@ -48,20 +84,12 @@ def get_warrant_underlying_codes(universe: list[dict], max_retries: int = 3) -> 
         if norm_name:
             name_to_code[norm_name] = row["code"]
 
-    data = None
-    for attempt in range(1, max_retries + 1):
-        try:
-            r = requests.get(URL, headers=HEADERS, timeout=60)
-            if r.status_code == 200:
-                data = r.json()
-                break
-        except Exception as e:
-            print(f"[warn] 權證資料第{attempt}次抓取失敗: {e}")
-        if attempt < max_retries:
-            time.sleep(3)
+    twse_data = _fetch_one_source(TWSE_URL, "證交所(上市)", max_retries)
+    tpex_data = _fetch_one_source(TPEX_URL, "櫃買中心(上櫃)", max_retries)
+    data = twse_data + tpex_data
 
     if not data:
-        print("[warn] 權證資料抓取失敗,回傳空集合(此濾網這次會讓所有股票被排除,不建議在這種狀況下使用)")
+        print("[warn] 權證資料抓取全部失敗,回傳空集合(此濾網這次會讓所有股票被排除,不建議在這種狀況下使用)")
         return set(), {"error": "fetch_failed"}
 
     matched_codes = set()
@@ -84,8 +112,8 @@ def get_warrant_underlying_codes(universe: list[dict], max_retries: int = 3) -> 
         "unmatched_count": len(unmatched_names),
     }
 
-    print(f"權證資料:共 {total_warrants} 檔權證,比對出 {len(matched_codes)} 檔有發行權證的股票,"
-          f"{len(unmatched_names)} 種標的名稱無法比對(通常是指數,不是問題)")
+    print(f"權證資料(上市+上櫃合併):共 {total_warrants} 檔權證,比對出 {len(matched_codes)} 檔有發行權證的股票,"
+          f"{len(unmatched_names)} 種標的名稱無法比對(通常是指數或ETF,不是問題)")
 
     return matched_codes, diagnostics
 
