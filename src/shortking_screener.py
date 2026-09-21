@@ -1,5 +1,5 @@
 """
-短線王(APP上市版:組合J + 大盤濾網 + 純外資融資雙買 + 每日前6名乖離)篩選器。
+短線王(APP上市版:組合J + 大盤濾網 + 純外資融資雙買 + 權證篩選 + 每日前6名乖離)篩選器。
 適合短線/權證操作的進場訊號,已通過牛熊市回測驗證。
 
 篩選條件(當天同時符合,收盤價直接進場):
@@ -9,7 +9,11 @@
   4. 大盤環境濾網:上市看加權指數(^TWII)15MA、上櫃看櫃買指數(官方報表)15MA,各自把關
   5. 外資融資純雙買濾網:近5個交易日內出現過「外資買超+融資增加同一天」就合格,
      不管之後有沒有出現雙賣(已拿掉舊版「雙賣就排除」的限制)
-  6. 當天通過以上所有條件的候選股,只取「15MA乖離最高的前6名」
+  6. 【新增】必須是目前有發行中權證的股票(不然找不到對應的權證可以打)——
+     這個篩選是在「排序取前N名」之前就先排除,不是選出前6名後才檢查,
+     這樣才能確保候選名單盡量湊到接近6檔真正能操作的股票,不會因為前面
+     幾名剛好都沒有權證,導致最後篩出來的名單縮水
+  7. 當天通過以上所有條件的候選股,只取「15MA乖離最高的前6名」
 
 【已拿掉ATR14波動度門檻】經回測驗證(ATR濾網 × 雙買窗口天數,4組對照):
   拿掉ATR、雙買窗口縮短為5天且不管雙賣,是四組裡綜合表現最佳的版本:
@@ -17,6 +21,12 @@
     逆風期(2022.02-2023.02):期望值+1.52%(351筆),MDD 57.17%(四組最低),
       最長連續虧損2個月(比原本ATR版本的6個月大幅改善)
   故正式拿掉ATR14門檻,雙買濾網窗口從9天縮短為5天且不再檢查雙賣。
+
+【新增權證篩選的原因】:拿掉ATR之後,候選股數量明顯增加,但訊號變得比較雜亂,
+  很多是找不到對應權證可以操作的小型股。加入「必須有發行中權證」這道篩選,
+  確保前6名候選,都是真的能拿權證去操作的標的,不是看得到打不到。
+  這個篩選還沒有經過歷史回測驗證(權證發行狀態是「現在式」的資訊,沒有
+  歷史資料可以回測),是根據實務操作需求直接上線的規則。
 
 排序:依15MA乖離率由大到小排序(用來決定前6名)。
 
@@ -30,6 +40,7 @@ import requests
 import yfinance as yf
 
 from institutional_flow import build_pure_dualbuy_qualified_set
+from warrant_underlyings import get_warrant_underlying_codes
 
 SHORT_MA_PERIOD = 15
 BIAS_MIN_THRESHOLD = 5.0  # 已回測驗證:5%走中庸之道,順風/逆風期望值都接近8%版本,
@@ -242,6 +253,10 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
     print("抓取外資融資純雙買資料(近5個交易日,不論雙賣,上市+上櫃)...")
     dual_buy_qualified = build_pure_dualbuy_qualified_set(n_days=5)
 
+    print("抓取目前有發行中權證的股票清單...")
+    warrant_codes, warrant_diag = get_warrant_underlying_codes(universe)
+    print(f"有權證的股票:{len(warrant_codes)} 檔")
+
     results = []
     total = len(universe)
     ticker_to_name = {row["ticker"]: row for row in universe}
@@ -260,6 +275,13 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
             if row is None:
                 continue
 
+            code = t.replace(".TWO", "").replace(".TW", "")
+
+            # 權證篩選:沒有發行中權證的股票,直接排除,不用再往下算其他條件
+            # (放在最前面判斷,省下後面不必要的運算)
+            if code not in warrant_codes:
+                continue
+
             # 大盤環境濾網:抓不到資料時保守放行,不因資料源問題誤擋整個市場
             market = row["market"]
             regime = market_regime["twse"] if market == "TWSE" else market_regime["otc"]
@@ -267,7 +289,6 @@ def scan_universe(universe: list[dict], progress: bool = True) -> tuple[list[dic
                 continue
 
             # 外資融資純雙買濾網
-            code = t.replace(".TWO", "").replace(".TW", "")
             if code not in dual_buy_qualified:
                 continue
 
