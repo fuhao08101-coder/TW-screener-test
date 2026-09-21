@@ -1,6 +1,140 @@
 {
-  "generated_at": "2026-09-19 01:13:31",
+  "generated_at": "2026-09-21 09:19:44",
   "history": [
+    {
+      "date": "2026-09-21",
+      "generated_at": "2026-09-21 09:19:44",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 47180.75,
+          "ma15": 46472.21
+        },
+        "otc": {
+          "is_strong": true,
+          "close": 412.68,
+          "ma15": 402.4
+        }
+      },
+      "count": 6,
+      "results": [
+        {
+          "ticker": "2305.TW",
+          "name": "全友",
+          "close": 58.7,
+          "high": 59.0,
+          "ma15": 38.95,
+          "bias_pct": 50.71,
+          "recent_high": 54.3,
+          "signal_low": 53.8,
+          "as_of": "2026-09-18",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "電腦及週邊設備業",
+          "revenue_mom_pct": 1.49,
+          "revenue_yoy_pct": 239.99,
+          "same_group_industry": null,
+          "has_block_trade": false
+        },
+        {
+          "ticker": "2221.TWO",
+          "name": "大甲",
+          "close": 127.5,
+          "high": 127.5,
+          "ma15": 93.76,
+          "bias_pct": 35.99,
+          "recent_high": 116.0,
+          "signal_low": 119.0,
+          "as_of": "2026-09-18",
+          "market": "TPEX",
+          "revenue_month": "11508",
+          "industry": "其他",
+          "revenue_mom_pct": 42.19,
+          "revenue_yoy_pct": 81.32,
+          "same_group_industry": null,
+          "has_block_trade": null
+        },
+        {
+          "ticker": "6226.TW",
+          "name": "光鼎",
+          "close": 45.7,
+          "high": 48.0,
+          "ma15": 34.55,
+          "bias_pct": 32.27,
+          "recent_high": 43.85,
+          "signal_low": 42.3,
+          "as_of": "2026-09-18",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "光電業",
+          "revenue_mom_pct": -11.46,
+          "revenue_yoy_pct": 13.06,
+          "same_group_industry": "光電業",
+          "has_block_trade": false
+        },
+        {
+          "ticker": "6221.TWO",
+          "name": "晉泰",
+          "close": 31.5,
+          "high": 31.5,
+          "ma15": 23.93,
+          "bias_pct": 31.63,
+          "recent_high": 30.95,
+          "signal_low": 30.5,
+          "as_of": "2026-09-18",
+          "market": "TPEX",
+          "revenue_month": "11508",
+          "industry": "資訊服務業",
+          "revenue_mom_pct": 76.28,
+          "revenue_yoy_pct": 21.48,
+          "same_group_industry": null,
+          "has_block_trade": null
+        },
+        {
+          "ticker": "6218.TWO",
+          "name": "豪勉",
+          "close": 61.6,
+          "high": 61.6,
+          "ma15": 47.03,
+          "bias_pct": 30.98,
+          "recent_high": 58.9,
+          "signal_low": 56.1,
+          "as_of": "2026-09-18",
+          "market": "TPEX",
+          "revenue_month": "11508",
+          "industry": "通信網路業",
+          "revenue_mom_pct": 37.02,
+          "revenue_yoy_pct": 52.85,
+          "same_group_industry": null,
+          "has_block_trade": null
+        },
+        {
+          "ticker": "6168.TW",
+          "name": "宏齊",
+          "close": 38.85,
+          "high": 38.85,
+          "ma15": 30.2,
+          "bias_pct": 28.63,
+          "recent_high": 35.35,
+          "signal_low": 35.85,
+          "as_of": "2026-09-18",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "光電業",
+          "revenue_mom_pct": 7.7,
+          "revenue_yoy_pct": 18.52,
+          "same_group_industry": "光電業",
+          "has_block_trade": false
+        }
+      ]
+    },
     {
       "date": "2026-09-19",
       "generated_at": "2026-09-19 01:13:31",
@@ -96,33 +230,6 @@
           "is_strong": false,
           "close": 399.21,
           "ma15": 401.89
-        }
-      },
-      "count": 0,
-      "results": []
-    },
-    {
-      "date": "2026-09-15",
-      "generated_at": "2026-09-15 02:54:03",
-      "params": {
-        "atr_period": 14,
-        "atr_min_threshold": 8.0,
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": false,
-          "close": 46184.85,
-          "ma15": 46297.5
-        },
-        "otc": {
-          "is_strong": false,
-          "close": 394.67,
-          "ma15": 401.7
         }
       },
       "count": 0,
