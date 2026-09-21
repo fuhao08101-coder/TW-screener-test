@@ -27,7 +27,8 @@
     position:sticky; top:0; z-index:5;
     background:linear-gradient(180deg,#0d1116,#0b0e11 90%);
     border-bottom:1px solid var(--line);
-    padding:16px 18px 12px; }
+    padding:16px 18px 12px;
+  }
   .eyebrow{
     display:flex; align-items:center; gap:8px;
     font-family:var(--mono); font-size:11px; letter-spacing:.08em;
@@ -56,7 +57,8 @@
   .market-regime{
     margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;
   }
-  .regime-badge{flex:1; min-width:140px; padding:8px 12px; border-radius:10px;
+  .regime-badge{
+    flex:1; min-width:140px; padding:8px 12px; border-radius:10px;
     font-family:var(--mono); font-size:12px; border:1px solid;
   }
   .regime-badge.strong{ background:rgba(47,174,107,.12); border-color:#2fae6b; color:#4fd68a; }
@@ -85,7 +87,8 @@
   .industry-summary-body{
     padding:0 12px 10px 12px;
   }
-  .industry-summary.collapsed .industry-summary-body{ display:none; } .industry-row{
+  .industry-summary.collapsed .industry-summary-body{ display:none; }
+  .industry-row{
     display:flex; align-items:center; gap:8px; padding:4px 0;
     font-family:var(--mono); font-size:12.5px;
   }
@@ -114,7 +117,8 @@
   .meta b{color:var(--text); font-weight:600;}
   .right{text-align:right; flex-shrink:0;}
   .bias-badge{
-    font-family:var(--mono); font-weight:700; font-size:17px;   padding:3px 10px; border-radius:8px; display:inline-block;
+    font-family:var(--mono); font-weight:700; font-size:17px;
+    padding:3px 10px; border-radius:8px; display:inline-block;
     color:var(--up); background:rgba(224,86,86,.12);
   }
   footer{
@@ -143,11 +147,12 @@
   </div>
 </header>
 
-<main id="main"><div class="empty">資料載入中…</div>
+<main id="main">
+  <div class="empty">資料載入中…</div>
 </main>
 
 <footer>
-  條件:收盤 &gt; 15MA,15MA乖離 ≥ 門檻,收盤站上近5日高點,大盤環境濾網,外資融資5日內曾雙買(不論之後有無雙賣),每日僅取乖離前6名(上市+上櫃)<br>
+  條件:ATR14絕對值 ≥ 門檻,收盤 &gt; 15MA,15MA乖離 ≥ 門檻,收盤站上近5日高點,大盤環境濾網,外資融資9日內雙買且無雙減,每日僅取乖離前6名(上市+上櫃)<br>
   依 15MA乖離率 由大到小排序<br>
   僅供研究參考,非投資建議
 </footer>
@@ -164,6 +169,7 @@ function renderDay(idx){
 
   const p = day.params;
   document.getElementById('params').innerHTML = `
+    <span class="chip">ATR${p.atr_period} ≥ ${p.atr_min_threshold}</span>
     <span class="chip">收盤 &gt; ${p.short_ma}MA</span>
     <span class="chip">乖離 ≥ ${p.bias_min_threshold}%</span>
     <span class="chip">收盤 &gt; 近${p.breakout_lookback_days}日高點</span>
@@ -171,7 +177,8 @@ function renderDay(idx){
     <span class="chip">每日前${p.top_n_per_day}名</span>
   `;
 
-  // 大盤環境燈號(加權/櫃買 強弱狀態)const regime = day.market_regime || {};
+  // 大盤環境燈號(加權/櫃買 強弱狀態)
+  const regime = day.market_regime || {};
   function renderRegimeBadge(name, r) {
     if (!r) {
       return `<div class="regime-badge unknown"><div class="regime-badge-title">${name}:資料暫缺</div><div class="regime-badge-detail">今日保守放行,未套用濾網</div></div>`;
@@ -200,7 +207,8 @@ function renderDay(idx){
     const maxCount = sorted[0][1];
     industryList.innerHTML = sorted.map(([name, count]) => `
       <div class="industry-row">
-        <span class="industry-name">${name}</span> <div class="industry-bar-track">
+        <span class="industry-name">${name}</span>
+        <div class="industry-bar-track">
           <div class="industry-bar-fill" style="width:${(count / maxCount * 100)}%"></div>
         </div>
         <span class="industry-count">${count}檔</span>
@@ -231,7 +239,8 @@ function renderDay(idx){
           ${r.revenue_month ? `<span style="color:var(--muted);">(${r.revenue_month.toString().slice(-2)}月營收)</span>` : ''}
           ${r.revenue_mom_pct !== null && r.revenue_mom_pct !== undefined ? `<span>MoM <b style="color:${r.revenue_mom_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_mom_pct>=0?'+':''}${r.revenue_mom_pct}%</b></span>` : ''}
           ${r.revenue_yoy_pct !== null && r.revenue_yoy_pct !== undefined ? `<span>YoY <b style="color:${r.revenue_yoy_pct>=0?'var(--up)':'var(--down)'}">${r.revenue_yoy_pct>=0?'+':''}${r.revenue_yoy_pct}%</b></span>` : ''}
-          <span>${r.market}</span></div>
+          <span>${r.market}</span>
+        </div>
       </div>
       <div class="right">
         <div class="bias-badge">+${r.bias_pct}%</div>
@@ -260,7 +269,9 @@ async function load(){
 
     document.getElementById('day-tabs').innerHTML = historyData.map((d, i) =>
       `<div class="day-tab" data-idx="${i}">${d.date}</div>`
-    ).join('');  document.querySelectorAll('.day-tab').forEach(el => {
+    ).join('');
+
+    document.querySelectorAll('.day-tab').forEach(el => {
       el.addEventListener('click', () => renderDay(parseInt(el.dataset.idx)));
     });
 
