@@ -1,6 +1,140 @@
 {
-  "generated_at": "2026-10-01 02:35:51",
+  "generated_at": "2026-10-02 03:04:39",
   "history": [
+    {
+      "date": "2026-10-02",
+      "generated_at": "2026-10-02 03:04:39",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 47940.13,
+          "ma15": 47025.28
+        },
+        "otc": {
+          "is_strong": true,
+          "close": 418.82,
+          "ma15": 407.0
+        }
+      },
+      "count": 6,
+      "results": [
+        {
+          "ticker": "6533.TW",
+          "name": "晶心科",
+          "close": 366.5,
+          "high": 366.5,
+          "ma15": 265.87,
+          "bias_pct": 37.85,
+          "recent_high": 333.5,
+          "signal_low": 337.0,
+          "as_of": "2026-10-01",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "半導體業",
+          "revenue_mom_pct": -5.21,
+          "revenue_yoy_pct": -25.73,
+          "same_group_industry": "半導體業",
+          "has_block_trade": false
+        },
+        {
+          "ticker": "6957.TW",
+          "name": "裕慶-KY",
+          "close": 384.0,
+          "high": 400.0,
+          "ma15": 283.5,
+          "bias_pct": 35.45,
+          "recent_high": 371.0,
+          "signal_low": 364.0,
+          "as_of": "2026-10-01",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "其他",
+          "revenue_mom_pct": 10.67,
+          "revenue_yoy_pct": -31.15,
+          "same_group_industry": "其他",
+          "has_block_trade": false
+        },
+        {
+          "ticker": "6672.TW",
+          "name": "騰輝電子-KY",
+          "close": 405.5,
+          "high": 405.5,
+          "ma15": 316.13,
+          "bias_pct": 28.27,
+          "recent_high": 369.0,
+          "signal_low": 369.5,
+          "as_of": "2026-10-01",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "電子零組件業",
+          "revenue_mom_pct": 21.13,
+          "revenue_yoy_pct": 133.24,
+          "same_group_industry": null,
+          "has_block_trade": false
+        },
+        {
+          "ticker": "6485.TWO",
+          "name": "點序",
+          "close": 84.7,
+          "high": 84.7,
+          "ma15": 66.27,
+          "bias_pct": 27.8,
+          "recent_high": 77.3,
+          "signal_low": 77.5,
+          "as_of": "2026-10-01",
+          "market": "TPEX",
+          "revenue_month": "11508",
+          "industry": "半導體業",
+          "revenue_mom_pct": 8.33,
+          "revenue_yoy_pct": 21.16,
+          "same_group_industry": "半導體業",
+          "has_block_trade": null
+        },
+        {
+          "ticker": "2340.TW",
+          "name": "台亞",
+          "close": 43.85,
+          "high": 44.7,
+          "ma15": 34.59,
+          "bias_pct": 26.76,
+          "recent_high": 41.5,
+          "signal_low": 40.25,
+          "as_of": "2026-10-01",
+          "market": "TWSE",
+          "revenue_month": "11508",
+          "industry": "半導體業",
+          "revenue_mom_pct": 20.28,
+          "revenue_yoy_pct": 21.87,
+          "same_group_industry": "半導體業",
+          "has_block_trade": false
+        },
+        {
+          "ticker": "4556.TWO",
+          "name": "旭然",
+          "close": 111.5,
+          "high": 111.5,
+          "ma15": 89.67,
+          "bias_pct": 24.34,
+          "recent_high": 101.5,
+          "signal_low": 98.3,
+          "as_of": "2026-10-01",
+          "market": "TPEX",
+          "revenue_month": "11508",
+          "industry": "其他",
+          "revenue_mom_pct": -24.21,
+          "revenue_yoy_pct": 18.73,
+          "same_group_industry": "其他",
+          "has_block_trade": null
+        }
+      ]
+    },
     {
       "date": "2026-10-01",
       "generated_at": "2026-10-01 02:35:51",
@@ -536,31 +670,6 @@
           "has_block_trade": true
         }
       ]
-    },
-    {
-      "date": "2026-09-25",
-      "generated_at": "2026-09-25 01:58:26",
-      "params": {
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 48157.29,
-          "ma15": 46658.8
-        },
-        "otc": {
-          "is_strong": true,
-          "close": 412.99,
-          "ma15": 405.05
-        }
-      },
-      "count": 0,
-      "results": []
     }
   ]
 }
