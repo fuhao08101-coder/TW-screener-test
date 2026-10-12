@@ -1,6 +1,31 @@
 {
-  "generated_at": "2026-10-10 03:00:32",
+  "generated_at": "2026-10-13 05:53:58",
   "history": [
+    {
+      "date": "2026-10-13",
+      "generated_at": "2026-10-13 05:53:58",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": true,
+          "close": 49313.44,
+          "ma15": 48138.28
+        },
+        "otc": {
+          "is_strong": true,
+          "close": 427.9,
+          "ma15": 419.25
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-10-10",
       "generated_at": "2026-10-10 03:00:32",
@@ -533,140 +558,6 @@
           "revenue_mom_pct": -19.06,
           "revenue_yoy_pct": 3.66,
           "same_group_industry": null,
-          "has_block_trade": null
-        }
-      ]
-    },
-    {
-      "date": "2026-10-06",
-      "generated_at": "2026-10-06 05:16:49",
-      "params": {
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 48475.74,
-          "ma15": 47194.61
-        },
-        "otc": {
-          "is_strong": true,
-          "close": 432.48,
-          "ma15": 410.07
-        }
-      },
-      "count": 6,
-      "results": [
-        {
-          "ticker": "3701.TW",
-          "name": "大眾控",
-          "close": 60.9,
-          "high": 60.9,
-          "ma15": 44.13,
-          "bias_pct": 37.99,
-          "recent_high": 55.4,
-          "signal_low": 60.9,
-          "as_of": "2026-10-05",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "電腦及週邊設備業",
-          "revenue_mom_pct": -7.2,
-          "revenue_yoy_pct": 6.46,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "2340.TW",
-          "name": "台亞",
-          "close": 50.3,
-          "high": 50.3,
-          "ma15": 36.74,
-          "bias_pct": 36.91,
-          "recent_high": 47.2,
-          "signal_low": 46.5,
-          "as_of": "2026-10-05",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "半導體業",
-          "revenue_mom_pct": 20.28,
-          "revenue_yoy_pct": 21.87,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6672.TW",
-          "name": "騰輝電子-KY",
-          "close": 451.0,
-          "high": 457.5,
-          "ma15": 335.57,
-          "bias_pct": 34.4,
-          "recent_high": 439.0,
-          "signal_low": 435.0,
-          "as_of": "2026-10-05",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 21.13,
-          "revenue_yoy_pct": 133.24,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6957.TW",
-          "name": "裕慶-KY",
-          "close": 410.0,
-          "high": 413.0,
-          "ma15": 306.3,
-          "bias_pct": 33.86,
-          "recent_high": 400.0,
-          "signal_low": 380.5,
-          "as_of": "2026-10-05",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "其他",
-          "revenue_mom_pct": 10.67,
-          "revenue_yoy_pct": -31.15,
-          "same_group_industry": "其他",
-          "has_block_trade": true
-        },
-        {
-          "ticker": "4556.TWO",
-          "name": "旭然",
-          "close": 125.5,
-          "high": 125.5,
-          "ma15": 94.73,
-          "bias_pct": 32.49,
-          "recent_high": 122.5,
-          "signal_low": 114.5,
-          "as_of": "2026-10-05",
-          "market": "TPEX",
-          "revenue_month": "11508",
-          "industry": "其他",
-          "revenue_mom_pct": -24.21,
-          "revenue_yoy_pct": 18.73,
-          "same_group_industry": "其他",
-          "has_block_trade": null
-        },
-        {
-          "ticker": "3114.TWO",
-          "name": "好德",
-          "close": 43.6,
-          "high": 43.6,
-          "ma15": 33.25,
-          "bias_pct": 31.14,
-          "recent_high": 39.65,
-          "signal_low": 42.05,
-          "as_of": "2026-10-05",
-          "market": "TPEX",
-          "revenue_month": "11508",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": -18.14,
-          "revenue_yoy_pct": 3.85,
-          "same_group_industry": "電子零組件業",
           "has_block_trade": null
         }
       ]
