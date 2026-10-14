@@ -1,6 +1,31 @@
 {
-  "generated_at": "2026-10-14 04:00:11",
+  "generated_at": "2026-10-15 02:12:46",
   "history": [
+    {
+      "date": "2026-10-15",
+      "generated_at": "2026-10-15 02:12:46",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": false,
+          "close": 48341.31,
+          "ma15": 48505.38
+        },
+        "otc": {
+          "is_strong": false,
+          "close": 420.13,
+          "ma15": 420.83
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-10-14",
       "generated_at": "2026-10-14 04:00:11",
@@ -424,140 +449,6 @@
           "revenue_mom_pct": 4.41,
           "revenue_yoy_pct": 65.76,
           "same_group_industry": "電子零組件業",
-          "has_block_trade": null
-        }
-      ]
-    },
-    {
-      "date": "2026-10-08",
-      "generated_at": "2026-10-08 03:33:24",
-      "params": {
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 49822.55,
-          "ma15": 47621.9
-        },
-        "otc": {
-          "is_strong": true,
-          "close": 430.46,
-          "ma15": 414.81
-        }
-      },
-      "count": 6,
-      "results": [
-        {
-          "ticker": "6672.TW",
-          "name": "騰輝電子-KY",
-          "close": 505.0,
-          "high": 505.0,
-          "ma15": 360.77,
-          "bias_pct": 39.98,
-          "recent_high": 459.5,
-          "signal_low": 497.5,
-          "as_of": "2026-10-07",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 21.13,
-          "revenue_yoy_pct": 133.24,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6957.TW",
-          "name": "裕慶-KY",
-          "close": 444.0,
-          "high": 444.0,
-          "ma15": 331.4,
-          "bias_pct": 33.98,
-          "recent_high": 417.5,
-          "signal_low": 404.5,
-          "as_of": "2026-10-07",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "其他",
-          "revenue_mom_pct": 10.67,
-          "revenue_yoy_pct": -31.15,
-          "same_group_industry": null,
-          "has_block_trade": true
-        },
-        {
-          "ticker": "2492.TW",
-          "name": "華新科",
-          "close": 428.0,
-          "high": 428.0,
-          "ma15": 328.6,
-          "bias_pct": 30.25,
-          "recent_high": 396.0,
-          "signal_low": 388.0,
-          "as_of": "2026-10-07",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 2.81,
-          "revenue_yoy_pct": 45.54,
-          "same_group_industry": "電子零組件業",
-          "has_block_trade": true
-        },
-        {
-          "ticker": "3016.TW",
-          "name": "嘉晶",
-          "close": 195.0,
-          "high": 195.5,
-          "ma15": 151.37,
-          "bias_pct": 28.83,
-          "recent_high": 189.5,
-          "signal_low": 185.0,
-          "as_of": "2026-10-07",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "半導體業",
-          "revenue_mom_pct": 5.11,
-          "revenue_yoy_pct": 57.79,
-          "same_group_industry": "半導體業",
-          "has_block_trade": true
-        },
-        {
-          "ticker": "6456.TW",
-          "name": "GIS-KY",
-          "close": 102.0,
-          "high": 108.0,
-          "ma15": 81.11,
-          "bias_pct": 25.75,
-          "recent_high": 99.6,
-          "signal_low": 96.3,
-          "as_of": "2026-10-07",
-          "market": "TWSE",
-          "revenue_month": "11508",
-          "industry": "光電業",
-          "revenue_mom_pct": 3.18,
-          "revenue_yoy_pct": -29.98,
-          "same_group_industry": null,
-          "has_block_trade": false
-        },
-        {
-          "ticker": "6716.TWO",
-          "name": "應廣",
-          "close": 153.5,
-          "high": 160.0,
-          "ma15": 122.4,
-          "bias_pct": 25.41,
-          "recent_high": 146.0,
-          "signal_low": 142.5,
-          "as_of": "2026-10-07",
-          "market": "TPEX",
-          "revenue_month": "11508",
-          "industry": "半導體業",
-          "revenue_mom_pct": 2.66,
-          "revenue_yoy_pct": 111.75,
-          "same_group_industry": "半導體業",
           "has_block_trade": null
         }
       ]
