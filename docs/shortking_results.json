@@ -1,6 +1,31 @@
 {
-  "generated_at": "2026-10-20 03:29:47",
+  "generated_at": "2026-10-21 02:08:38",
   "history": [
+    {
+      "date": "2026-10-21",
+      "generated_at": "2026-10-21 02:08:38",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": false,
+          "close": 46822.08,
+          "ma15": 48416.84
+        },
+        "otc": {
+          "is_strong": false,
+          "close": 387.88,
+          "ma15": 415.8
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-10-20",
       "generated_at": "2026-10-20 03:29:47",
@@ -100,140 +125,6 @@
       },
       "count": 0,
       "results": []
-    },
-    {
-      "date": "2026-10-14",
-      "generated_at": "2026-10-14 04:00:11",
-      "params": {
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": true,
-          "close": 49301.96,
-          "ma15": 48368.49
-        },
-        "otc": {
-          "is_strong": false,
-          "close": 414.31,
-          "ma15": 420.33
-        }
-      },
-      "count": 6,
-      "results": [
-        {
-          "ticker": "9103.TW",
-          "name": "美德醫療-DR",
-          "close": 7.02,
-          "high": 7.1,
-          "ma15": 5.29,
-          "bias_pct": 32.6,
-          "recent_high": 6.46,
-          "signal_low": 6.53,
-          "as_of": "2026-10-13",
-          "market": "TWSE",
-          "revenue_month": null,
-          "industry": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null,
-          "same_group_industry": null,
-          "has_block_trade": null
-        },
-        {
-          "ticker": "6834.TW",
-          "name": "天二科技",
-          "close": 159.5,
-          "high": 159.5,
-          "ma15": 121.99,
-          "bias_pct": 30.75,
-          "recent_high": 145.0,
-          "signal_low": 148.5,
-          "as_of": "2026-10-13",
-          "market": "TWSE",
-          "revenue_month": "11509",
-          "industry": "電子零組件業",
-          "revenue_mom_pct": 6.75,
-          "revenue_yoy_pct": 132.4,
-          "same_group_industry": null,
-          "has_block_trade": null
-        },
-        {
-          "ticker": "6957.TW",
-          "name": "裕慶-KY",
-          "close": 470.0,
-          "high": 470.0,
-          "ma15": 371.17,
-          "bias_pct": 26.63,
-          "recent_high": 460.0,
-          "signal_low": 448.0,
-          "as_of": "2026-10-13",
-          "market": "TWSE",
-          "revenue_month": "11509",
-          "industry": "其他",
-          "revenue_mom_pct": 75.29,
-          "revenue_yoy_pct": 43.98,
-          "same_group_industry": null,
-          "has_block_trade": null
-        },
-        {
-          "ticker": "6505.TW",
-          "name": "台塑化",
-          "close": 119.0,
-          "high": 119.0,
-          "ma15": 97.84,
-          "bias_pct": 21.63,
-          "recent_high": 114.0,
-          "signal_low": 105.0,
-          "as_of": "2026-10-13",
-          "market": "TWSE",
-          "revenue_month": null,
-          "industry": null,
-          "revenue_mom_pct": null,
-          "revenue_yoy_pct": null,
-          "same_group_industry": null,
-          "has_block_trade": null
-        },
-        {
-          "ticker": "3406.TW",
-          "name": "玉晶光",
-          "close": 1175.0,
-          "high": 1175.0,
-          "ma15": 988.4,
-          "bias_pct": 18.88,
-          "recent_high": 1120.0,
-          "signal_low": 1040.0,
-          "as_of": "2026-10-13",
-          "market": "TWSE",
-          "revenue_month": "11509",
-          "industry": "光電業",
-          "revenue_mom_pct": -1.75,
-          "revenue_yoy_pct": 0.54,
-          "same_group_industry": null,
-          "has_block_trade": null
-        },
-        {
-          "ticker": "1312.TW",
-          "name": "國喬",
-          "close": 17.65,
-          "high": 17.65,
-          "ma15": 15.02,
-          "bias_pct": 17.54,
-          "recent_high": 16.65,
-          "signal_low": 15.75,
-          "as_of": "2026-10-13",
-          "market": "TWSE",
-          "revenue_month": "11509",
-          "industry": "塑膠工業",
-          "revenue_mom_pct": 74.5,
-          "revenue_yoy_pct": 96.81,
-          "same_group_industry": null,
-          "has_block_trade": null
-        }
-      ]
     }
   ]
 }
