@@ -1,6 +1,31 @@
 {
-  "generated_at": "2026-11-06 04:51:46",
+  "generated_at": "2026-11-07 04:07:00",
   "history": [
+    {
+      "date": "2026-11-07",
+      "generated_at": "2026-11-07 04:07:00",
+      "params": {
+        "short_ma": 15,
+        "bias_min_threshold": 5.0,
+        "breakout_lookback_days": 5,
+        "top_n_per_day": 6,
+        "require_dual_buy": true
+      },
+      "market_regime": {
+        "twse": {
+          "is_strong": false,
+          "close": 41574.72,
+          "ma15": 45747.63
+        },
+        "otc": {
+          "is_strong": false,
+          "close": 304.02,
+          "ma15": 371.43
+        }
+      },
+      "count": 0,
+      "results": []
+    },
     {
       "date": "2026-11-06",
       "generated_at": "2026-11-06 04:51:46",
@@ -96,31 +121,6 @@
           "is_strong": false,
           "close": 369.24,
           "ma15": 396.4
-        }
-      },
-      "count": 0,
-      "results": []
-    },
-    {
-      "date": "2026-10-31",
-      "generated_at": "2026-10-31 02:51:02",
-      "params": {
-        "short_ma": 15,
-        "bias_min_threshold": 5.0,
-        "breakout_lookback_days": 5,
-        "top_n_per_day": 6,
-        "require_dual_buy": true
-      },
-      "market_regime": {
-        "twse": {
-          "is_strong": false,
-          "close": 46368.33,
-          "ma15": 47655.8
-        },
-        "otc": {
-          "is_strong": false,
-          "close": 370.26,
-          "ma15": 400.48
         }
       },
       "count": 0,
