@@ -1,6 +1,68 @@
 {
-  "generated_at": "2026-11-19 18:33:04",
+  "generated_at": "2026-11-20 17:58:04",
   "history": [
+    {
+      "date": "2026-11-20",
+      "generated_at": "2026-11-20 17:58:04",
+      "params": {
+        "bias_ma": 15,
+        "ref_lookback_days": 40,
+        "ref_bias_threshold": 20.0,
+        "atr_period": 14,
+        "atr_min_threshold": 10.0
+      },
+      "count": 3,
+      "results": [
+        {
+          "ticker": "6957.TW",
+          "name": "裕慶-KY",
+          "close": 354.0,
+          "signal_high": 387.5,
+          "bias_pct": -16.72,
+          "ref_date": "2026-09-30",
+          "ref_close": 371.0,
+          "ref_bias_pct": 36.25,
+          "atr14": 30.83,
+          "as_of": "2026-11-19",
+          "market": "TWSE",
+          "revenue_month": "11510",
+          "revenue_mom_pct": -37.16,
+          "revenue_yoy_pct": 1.29
+        },
+        {
+          "ticker": "8099.TWO",
+          "name": "大世科",
+          "close": 148.5,
+          "signal_high": 171.0,
+          "bias_pct": -2.35,
+          "ref_date": "2026-11-04",
+          "ref_close": 143.5,
+          "ref_bias_pct": 60.29,
+          "atr14": 12.39,
+          "as_of": "2026-11-19",
+          "market": "TPEX",
+          "revenue_month": "11510",
+          "revenue_mom_pct": -16.36,
+          "revenue_yoy_pct": 87.01
+        },
+        {
+          "ticker": "2466.TW",
+          "name": "冠西電",
+          "close": 404.0,
+          "signal_high": 447.0,
+          "bias_pct": 8.26,
+          "ref_date": "2026-10-13",
+          "ref_close": 237.0,
+          "ref_bias_pct": 59.31,
+          "atr14": 35.33,
+          "as_of": "2026-11-19",
+          "market": "TWSE",
+          "revenue_month": "11510",
+          "revenue_mom_pct": -50.38,
+          "revenue_yoy_pct": 54.17
+        }
+      ]
+    },
     {
       "date": "2026-11-19",
       "generated_at": "2026-11-19 18:33:04",
@@ -486,148 +548,6 @@
           "revenue_month": "11510",
           "revenue_mom_pct": -6.19,
           "revenue_yoy_pct": 35.64
-        }
-      ]
-    },
-    {
-      "date": "2026-11-13",
-      "generated_at": "2026-11-13 17:21:45",
-      "params": {
-        "bias_ma": 15,
-        "ref_lookback_days": 40,
-        "ref_bias_threshold": 20.0,
-        "atr_period": 14,
-        "atr_min_threshold": 10.0
-      },
-      "count": 8,
-      "results": [
-        {
-          "ticker": "6957.TW",
-          "name": "裕慶-KY",
-          "close": 419.0,
-          "signal_high": 456.0,
-          "bias_pct": -5.49,
-          "ref_date": "2026-09-30",
-          "ref_close": 371.0,
-          "ref_bias_pct": 36.25,
-          "atr14": 32.81,
-          "as_of": "2026-11-12",
-          "market": "TWSE",
-          "revenue_month": "11510",
-          "revenue_mom_pct": -37.16,
-          "revenue_yoy_pct": 1.29
-        },
-        {
-          "ticker": "3147.TWO",
-          "name": "大綜",
-          "close": 326.0,
-          "signal_high": 355.5,
-          "bias_pct": 4.14,
-          "ref_date": "2026-10-08",
-          "ref_close": 308.0,
-          "ref_bias_pct": 20.19,
-          "atr14": 20.83,
-          "as_of": "2026-11-12",
-          "market": "TPEX",
-          "revenue_month": "11510",
-          "revenue_mom_pct": -4.62,
-          "revenue_yoy_pct": 43.34
-        },
-        {
-          "ticker": "4577.TWO",
-          "name": "達航科技",
-          "close": 129.5,
-          "signal_high": 147.5,
-          "bias_pct": 4.55,
-          "ref_date": "2026-10-22",
-          "ref_close": 127.0,
-          "ref_bias_pct": 32.01,
-          "atr14": 10.88,
-          "as_of": "2026-11-12",
-          "market": "TPEX",
-          "revenue_month": "11510",
-          "revenue_mom_pct": 12.37,
-          "revenue_yoy_pct": 41.89
-        },
-        {
-          "ticker": "3691.TWO",
-          "name": "碩禾",
-          "close": 143.5,
-          "signal_high": 149.0,
-          "bias_pct": 6.42,
-          "ref_date": "2026-10-29",
-          "ref_close": 144.0,
-          "ref_bias_pct": 34.96,
-          "atr14": 13.38,
-          "as_of": "2026-11-12",
-          "market": "TPEX",
-          "revenue_month": "11510",
-          "revenue_mom_pct": 6.91,
-          "revenue_yoy_pct": 59.21
-        },
-        {
-          "ticker": "6715.TW",
-          "name": "嘉基",
-          "close": 458.5,
-          "signal_high": 498.5,
-          "bias_pct": 6.71,
-          "ref_date": "2026-09-21",
-          "ref_close": 451.5,
-          "ref_bias_pct": 26.45,
-          "atr14": 39.42,
-          "as_of": "2026-11-12",
-          "market": "TWSE",
-          "revenue_month": "11510",
-          "revenue_mom_pct": -16.42,
-          "revenue_yoy_pct": -5.94
-        },
-        {
-          "ticker": "3443.TW",
-          "name": "創意",
-          "close": 7860.0,
-          "signal_high": 8555.0,
-          "bias_pct": 7.7,
-          "ref_date": "2026-09-22",
-          "ref_close": 8375.0,
-          "ref_bias_pct": 30.98,
-          "atr14": 608.36,
-          "as_of": "2026-11-12",
-          "market": "TWSE",
-          "revenue_month": "11510",
-          "revenue_mom_pct": 18.02,
-          "revenue_yoy_pct": 126.96
-        },
-        {
-          "ticker": "6870.TWO",
-          "name": "騰雲",
-          "close": 492.0,
-          "signal_high": 533.0,
-          "bias_pct": 20.63,
-          "ref_date": "2026-11-11",
-          "ref_close": 493.5,
-          "ref_bias_pct": 24.31,
-          "atr14": 32.31,
-          "as_of": "2026-11-12",
-          "market": "TPEX",
-          "revenue_month": "11510",
-          "revenue_mom_pct": -6.19,
-          "revenue_yoy_pct": 35.64
-        },
-        {
-          "ticker": "2466.TW",
-          "name": "冠西電",
-          "close": 436.5,
-          "signal_high": 436.5,
-          "bias_pct": 31.67,
-          "ref_date": "2026-10-13",
-          "ref_close": 237.0,
-          "ref_bias_pct": 59.31,
-          "atr14": 29.17,
-          "as_of": "2026-11-12",
-          "market": "TWSE",
-          "revenue_month": "11510",
-          "revenue_mom_pct": -50.38,
-          "revenue_yoy_pct": 54.17
         }
       ]
     }
